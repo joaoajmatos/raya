@@ -12,11 +12,14 @@ publish = false
 
 [workspace.dependencies]
 anyhow = "1"
+criterion = { version = "0.8", default-features = false }
 clap = { version = "4", features = ["derive"] }
+num_cpus = "1"
 safetensors = "0.6"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 thiserror = "2"
+wide = "1"
 tokenizers = { version = "0.22", default-features = false, features = ["onig"] }
 raya-core = { path = "crates/raya-core" }
 raya-kernels = { path = "crates/raya-kernels" }
