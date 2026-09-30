@@ -28,7 +28,7 @@ A cloud agent on raya cannot see laya-sparse. In the raya repo, commit:
 1. `docs/feasibility.md`: a copy of laya-sparse `docs/raya-feasibility.md` (source of truth for scope).
 2. `reference/laya/`: read-only snapshot of laya-sparse `laya/` (agent.py, common.py, layers) and
    `experiments/kernels/`, plus a `SOURCE.md` with the laya-sparse commit SHA. Not built, only read.
-3. `docs/agent-prompts.md`: this file. Only the files listed in `reference/SOURCE.md` are tracked.
+3. `docs/agent-prompts.md`: this file.
 Fixtures from P2 are copied into raya `tests/data/` (with the laya-sparse SHA in each meta.json). When
 Laya behaviour changes, re-run P2 and re-vendor; never edit vendored files by hand.
 

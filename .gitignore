@@ -2,11 +2,3 @@ target/
 results/
 __pycache__/
 *.pyc
-
-# reference/ is a read-only snapshot of laya-sparse; only what Raya needs is tracked
-reference/experiments/*
-!reference/experiments/kernels/
-!reference/experiments/cli.py
-!reference/experiments/manifest.py
-!reference/experiments/timing.py
-!reference/experiments/setup_windows.ps1
