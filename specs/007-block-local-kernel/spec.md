@@ -17,6 +17,7 @@
 ### Session 2026-09-30
 
 - Q: Which mask do the oracle and tiled kernel compute (exact +/-64 window or the full 3-block span)? → A: Exact +/-64 window (`|i-j| <= 64`); block-pair tiling is only the method, with the mask applied inside each tile.
+- Q: How does the kernel handle a padded tail? → A: The `AttentionKernel` trait takes a per-sequence valid length; keys at or beyond it are masked, and rows with no valid keys output zeros (never NaN).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -74,7 +75,7 @@ Portable SIMD is used by default; `avx2` and `neon` micro-kernels are optional c
 
 ### Functional Requirements
 
-- **FR-001**: `AttentionKernel` trait in `raya-kernels` (shared with feature 006; define it here if 006 has not merged).
+- **FR-001**: `AttentionKernel` trait in `raya-kernels` (shared with feature 006; define it here if 006 has not merged). It takes a per-sequence valid length: keys at or beyond it are masked, and a row with no valid keys outputs zeros.
 - **FR-002**: Both implementations compute the exact +/-64 window mask. Implementations: `naive` oracle; `tiled` FlashAttention-style (Q tile, K/V tiles, register-blocked micro-GEMM, online softmax, never a full score matrix), multithreaded across (head, block).
 - **FR-003**: Portable SIMD (`std::simd` or `wide`) by default; `avx2` and `neon` optional features; neither is the default.
 - **FR-004**: Supports sequences up to 8192, 16 heads, head dim 64, block 128.
