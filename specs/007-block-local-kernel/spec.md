@@ -82,7 +82,7 @@ Portable SIMD is used by default; `avx2` and `neon` micro-kernels are optional c
 ### Functional Requirements
 
 - **FR-001**: `AttentionKernel` trait in `raya-kernels` (shared with feature 006; define it here if 006 has not merged). It takes a per-sequence valid length: keys at or beyond it are masked, and a row with no valid keys outputs zeros.
-- **FR-002**: Both implementations take a `Mask` (`Block3` or `Window64`, as defined in User Story 1) and compute it exactly. `Block3` follows `reference/laya-sparse/experiments/kernels/reference.py` (`block_local`, scale `1/sqrt(head_dim)`, keys `j >= valid_len` masked, rows with no allowed key output zeros). Implementations: `naive` oracle (single-threaded scalar `f32`, per-score loop over only the keys the mask allows, no tiling or explicit SIMD; also the speed baseline for SC-004); `tiled` FlashAttention-style (Q tile, K/V tiles, register-blocked micro-GEMM, online softmax, never a full score matrix), multithreaded across (head, block).
+- **FR-002**: Both implementations take a `Mask` (`Block3` or `Window64`, as defined in User Story 1) and compute it exactly. `Block3` follows `reference/laya-sparse/experiments/kernels/reference.py` (`block_local`, scale `1/sqrt(head_dim)`, keys `j >= valid_len` masked, rows with no allowed key output zeros). Implementations: `naive` oracle (single-threaded scalar `f32`, per-score loop over only the keys the mask allows, no tiling or explicit SIMD; also the speed baseline for SC-004); `tiled` FlashAttention-style (Q tile, K/V tiles, micro-tiled dot-product kernels, online softmax, never a full score matrix), multithreaded across (head, block).
 - **FR-003**: Portable SIMD via the `wide` crate by default (`raya-kernels` only; `std::simd` is nightly-only and excluded; spec 001 FR-007 amended to allow `wide`); `avx2` and `neon` optional features; neither is the default. The default build uses baseline target features only (no `-C target-cpu` flags); the bench metadata records the RUSTFLAGS in effect.
 - **FR-004**: Supports sequences up to 8192, 16 heads, head dim 64, block 128.
 - **FR-005**: Criterion benches per User Story 2, with metadata JSON.
@@ -93,7 +93,7 @@ Portable SIMD is used by default; `avx2` and `neon` micro-kernels are optional c
 - **SC-001**: Correctness tests pass at 1e-5 on every listed case.
 - **SC-002**: Benchmarks and breakdown are reproducible from documented commands.
 - **SC-003**: The notes state a clear conclusion, including a negative one if warranted.
-- **SC-004**: The spike is a win for a mask if tiled is at least 3x faster than this naive oracle at 8192 tokens under that mask (16 heads, head dim 64, single-threaded, same machine). Missing the bar is reported as a negative result; no absolute comparison with 85 ms is made in this feature.
+- **SC-004**: The spike is a win for a mask if tiled is at least 3x faster than this naive oracle at 8192 tokens under that mask (16 heads, head dim 64, single-threaded, same machine). Missing the bar is reported as a negative result; no absolute comparison with 85 ms is made in this feature. This is a kernel-level result only, not a whole-forward-pass speed claim (a recorded deviation from constitution VI, acceptable for a spike).
 
 ## Assumptions
 

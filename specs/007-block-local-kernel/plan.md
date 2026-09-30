@@ -28,7 +28,7 @@ of SC-004, negative or not.
 
 **Project Type**: Library crate plus a Criterion bench target.
 
-**Performance Goals**: SC-004: tiled >= 3x faster than naive at 8192 tokens, 16 heads, head dim 64, single-threaded, same machine. No absolute target in this feature.
+**Performance Goals**: SC-004: for each mask, tiled >= 3x faster than naive at 8192 tokens, 16 heads, head dim 64, single-threaded, same machine. No absolute target in this feature.
 
 **Constraints**: fp32 only; no full score matrix (working set per task is O(tile)); `unsafe` only inside `raya-kernels`, and only if a micro-kernel needs it; baseline target features in default builds.
 
@@ -45,7 +45,7 @@ of SC-004, negative or not.
 | III. Measure, do not assume | Pass. Metadata JSON per run; cloud numbers labeled "cloud-agent hardware, indicative only"; the 85 ms comparison is stated invalid until run through 008. |
 | IV. Raya-L, fp32, inference only | Pass. fp32 only, no other dtypes. |
 | V. Portable first, SIMD optional | Pass. `wide` path is the default; `avx2`/`neon` are off by default with runtime dispatch and fallback. `unsafe` stays in `raya-kernels`. |
-| VI. Reference before kernel | Pass. Naive oracle lands first (tasks order) and tiled is tested against it. Bench may not run on a model forward; this spike benchmarks the kernel in isolation, which the notes label as kernel-only, not whole-forward. |
+| VI. Reference before kernel | Pass. Naive oracle lands first (tasks order) and tiled is tested against it. This spike benchmarks the kernel in isolation, a recorded deviation (see Complexity Tracking), and the notes and the PR description state it. |
 | VII. Small surface, explicit errors | Pass with note. `wide` and `num_cpus` are new dependencies, authorised by the spec clarifications and the spec 001 amendment. Shape or length errors return `KernelError`, not a panic. |
 
 Post-design re-check: still pass. No spec deviations.
@@ -95,5 +95,6 @@ reuse it.
 
 | Item | Why needed | Simpler alternative rejected |
 |---|---|---|
+| Kernel-only speed claim (deviation from constitution VI, "speed claims MUST account for the whole forward pass") | A spike must decide whether the kernel is worth pursuing before the whole forward exists (feature 006 is not merged); SC-004 is labeled a kernel-level result, and whole-forward claims wait for 008 | Blocking the spike on 006 and 008 would remove its purpose |
 | New dependencies `wide`, `num_cpus` | Stable portable SIMD (clarified); physical core count for the thread default | `std::simd` needs nightly; auto-vectorisation was offered and declined |
 | `build.rs` in raya-kernels | rustc and commit in metadata without a dependency | A `vergen`-style crate is a new dependency |
