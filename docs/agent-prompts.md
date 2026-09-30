@@ -22,15 +22,17 @@ P6 block-local kernel    ─┘   P4 tokenizer/seq  ─┼─> P5 reference forw
 P1, P2 and P6 are independent. P3 and P4 need P1 (and P2's fixtures for their tests). P5 needs P2, P3, P4.
 P7 needs P5 and P6. One branch and one PR per prompt; merge before starting its dependents.
 
-## Bridging the two repos (done; kept as a record)
+## Bridging the two repos
 
-A cloud agent on raya cannot see laya-sparse. In the raya repo, commit:
-1. `docs/feasibility.md`: a copy of laya-sparse `docs/raya-feasibility.md` (source of truth for scope).
-2. `reference/laya/`: read-only snapshot of laya-sparse `laya/` (agent.py, common.py, layers) and
-   `experiments/kernels/`, plus a `SOURCE.md` with the laya-sparse commit SHA. Not built, only read.
-3. `docs/agent-prompts.md`: this file.
-Fixtures from P2 are copied into raya `tests/data/` (with the laya-sparse SHA in each meta.json). When
-Laya behaviour changes, re-run P2 and re-vendor; never edit vendored files by hand.
+laya-sparse is a git submodule of raya at `reference/laya-sparse/`, pinned to a commit on `phase2-tooling`
+(public repo). Agents must run `git submodule update --init` first; if `reference/laya-sparse/` is empty,
+stop and say so. To move to newer Laya: in laya-sparse push the change, then in raya
+`git submodule update --remote reference/laya-sparse` and commit the new pointer. Never edit files under
+`reference/`.
+
+`docs/feasibility.md` lives in raya (source of truth for scope). Fixtures from P2 are generated in
+laya-sparse and copied into raya `tests/data/` (with the laya-sparse SHA in each meta.json); re-run P2 and
+re-copy when Laya behaviour changes. Never edit copied fixtures by hand.
 
 ---
 
@@ -38,12 +40,13 @@ Laya behaviour changes, re-run P2 and re-vendor; never edit vendored files by ha
 
 ```
 You are working in the `raya` repo: a Rust CPU inference runtime for Laya-style encoder-only decision
-models (Laya lives in a separate research repo, joaoajmatos/laya-sparse; a read-only snapshot is in
-reference/laya/). Before changing anything, read README.md, docs/feasibility.md and reference/SOURCE.md.
+models (Laya lives in a separate research repo, joaoajmatos/laya-sparse, checked out as the read-only git
+submodule reference/laya-sparse/). First run `git submodule update --init`. Before changing anything, read
+README.md and docs/feasibility.md.
 docs/feasibility.md is the source of truth for scope. If a file the task names is missing, stop and say so.
 
 Rules:
-- Laya's behaviour (reference/laya/) is the spec: match it, do not improve it. Never edit reference/ or vendored fixtures.
+- Laya's behaviour (reference/laya-sparse/laya/) is the spec: match it, do not improve it. Never edit reference/ or vendored fixtures.
 - Claims need measurements. Any number you produce on your own machine is NOT a measurement of the
   target CPU: label it "cloud-agent hardware, indicative only" and never compare it to numbers in
   the feasibility doc or Laya's result directories. Mark unmeasured statements as hypotheses.
@@ -74,7 +77,7 @@ Create a Cargo workspace at the repo root. Crates:
 Requirements:
 1. Rust stable, edition 2021, `rust-toolchain.toml` pinned, workspace-level lints (clippy pedantic
    allowed where noisy, `#![forbid(unsafe_code)]` everywhere except raya-kernels).
-2. raya-core config: parse Laya's model config (look at reference/laya/ and, once P2 fixtures exist,
+2. raya-core config: parse Laya's model config (look at reference/laya-sparse/laya/ and, once P2 fixtures exist,
    tests/data/ for the fields: layers, hidden size, heads, intermediate size,
    global-attention layer pattern, local window, RoPE thetas, norm eps, head layers, marker tokens).
    Also define the future-facing shape from docs/feasibility.md section 4.2 as types:
@@ -157,8 +160,8 @@ No model math here.
 Repo: raya. Branch: `p4-tokenizer` (needs P4b output vendored) (needs P1, P2 merged)
 
 ```
-Implement raya-tokenizer: a Rust port of the sequence builder in Laya (read reference/laya/agent.py and
-reference/laya/common.py for the exact marker-token layout, state handling, question types choice/score/noul,
+Implement raya-tokenizer: a Rust port of the sequence builder in Laya (read reference/laya-sparse/laya/agent.py and
+reference/laya-sparse/laya/common.py for the exact marker-token layout, state handling, question types choice/score/noul,
 truncation and max_len behaviour, padding).
 
 1. Load tokenizer.json via the `tokenizers` crate.
@@ -233,7 +236,7 @@ otherwise generates its own reference with a naive Rust implementation)
 
 ```
 Implement the block-local attention kernel in raya-kernels and benchmark it. Read
-reference/laya/experiments/kernels/local.py and docs/feasibility.md sections 2.2 and 2.3 (Phase 1 kernel
+reference/laya-sparse/laya/experiments/kernels/local.py and docs/feasibility.md sections 2.2 and 2.3 (Phase 1 kernel
 numbers are quoted there).
 
 Spec: seq up to 8192, 16 heads, head dim 64, block size 128, each query block attends to its own block
@@ -279,7 +282,7 @@ project's target machine.
    synthetic but fixed token input of the requested length plus one question, model loaded once
    (weights resident), measure end-to-end predict latency and per-component time (embedding, each
    encoder layer, head) with a low-overhead timer. Report p50/p90, peak RSS, and whether a time cap was
-   hit, mirroring the conventions of the Laya sweep (read reference/laya/experiments/cli.py).
+   hit, mirroring the conventions of the Laya sweep (read reference/laya-sparse/laya/experiments/cli.py).
 2. Write results to `results/<run-id>/raya-bench.json` (git-ignored) using the same manifest fields as
    Laya runs (cpu, cores, torch-free environment info, git commit, checkpoint revision, flags),
    plus the AttentionKernel implementation used.
@@ -291,7 +294,7 @@ project's target machine.
    benchmarks a wrong model.
 5. PowerShell script `scripts/build_windows.ps1` that builds release with `target-cpu=native`
    off by default (and an explicit flag to turn it on), matching the Windows conventions in
-   reference/laya/experiments/setup_windows.ps1.
+   reference/laya-sparse/laya/experiments/setup_windows.ps1.
 6. Document in README.md the exact steps for the researcher to run on the i7-8700 machine.
 
 Do not include any benchmark numbers from the cloud in docs/ as comparisons. Step 3's `compare-raya`

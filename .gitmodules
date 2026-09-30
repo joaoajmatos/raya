@@ -1,0 +1,4 @@
+[submodule "reference/laya-sparse"]
+	path = reference/laya-sparse
+	url = https://github.com/joaoajmatos/laya-sparse.git
+	branch = phase2-tooling
