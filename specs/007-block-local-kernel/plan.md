@@ -6,8 +6,8 @@
 
 ## Summary
 
-Fill in the `AttentionKernel` trait in `raya-kernels` and add two implementations of exact +/-64 local
-attention: a scalar `naive` oracle (also the speed baseline) and a FlashAttention-style `tiled` kernel
+Fill in the `AttentionKernel` trait in `raya-kernels` and add two implementations of block-local
+attention, each under two masks (`Block3`, Laya's `block_local` and the kernel the 85 ms figure measures, and exact `Window64`): a scalar `naive` oracle (also the speed baseline) and a FlashAttention-style `tiled` kernel
 (online softmax, no score matrix, multithreaded over (head, query block), portable SIMD through `wide`, optional
 `avx2` and `neon` micro-kernels with runtime dispatch). Correctness tests compare tiled with naive at edge
 lengths; Criterion benches time one layer at 2K, 4K and 8K tokens and write a metadata JSON; a stage-timing
@@ -32,7 +32,7 @@ of SC-004, negative or not.
 
 **Constraints**: fp32 only; no full score matrix (working set per task is O(tile)); `unsafe` only inside `raya-kernels`, and only if a micro-kernel needs it; baseline target features in default builds.
 
-**Scale/Scope**: Sequences up to 8192, 16 heads, head dim 64, window 64, block 128.
+**Scale/Scope**: Sequences up to 8192, 16 heads, head dim 64, block 128, masks `Block3` and `Window64` (64).
 
 ## Constitution Check
 
@@ -40,7 +40,7 @@ of SC-004, negative or not.
 
 | Principle | Status |
 |---|---|
-| I. Laya is the specification | Pass. Mask is exactly +/-64 (clarified); reference `local.py` could not be read (submodule empty in the authoring environment), so the goldens test and research R1 flag the check that must be made against it. |
+| I. Laya is the specification | Pass. `Block3` matches `reference.py`/`local.py` (read and confirmed, research R1); `Window64` is the model's own local window. The divergence between the two (feasibility open question) is reported, not hidden. |
 | II. Parity via golden fixtures | Pass with condition. PyTorch goldens are used when feature 002 output exists; otherwise the naive oracle is the reference and the notes say so. |
 | III. Measure, do not assume | Pass. Metadata JSON per run; cloud numbers labeled "cloud-agent hardware, indicative only"; the 85 ms comparison is stated invalid until run through 008. |
 | IV. Raya-L, fp32, inference only | Pass. fp32 only, no other dtypes. |
