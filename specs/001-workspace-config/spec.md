@@ -67,7 +67,7 @@ The researcher loads a Laya model config and gets typed fields: layer count, hid
 - **FR-004**: Future-facing types from `docs/feasibility.md` section 4.2: `Segment`, `AttentionKind::{Full, BlockLocal{w}, Gas{s}, Hybrid}` plus `LayaInterleaved{global_every, window}` (see Clarifications), and `Compression` with the single variant `None`.
 - **FR-005**: CI per User Story 1 scenario 2, with caching.
 - **FR-006**: `README.md` states what Raya is, the scope limits of the constitution, and build/test commands.
-- **FR-007**: Dependencies limited to serde, serde_json, thiserror, safetensors, tokenizers, clap, criterion (dev), anyhow (raya-cli only) and wide (raya-kernels only, added by feature 007).
+- **FR-007**: Dependencies limited to serde, serde_json, thiserror, safetensors, tokenizers, clap, criterion (dev), anyhow (raya-cli only) and wide and num_cpus (raya-kernels only, added by feature 007).
 - **FR-008**: No model math.
 
 ### Key Entities

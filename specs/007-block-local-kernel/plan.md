@@ -18,7 +18,7 @@ of SC-004, negative or not.
 
 **Language/Version**: Rust stable 1.94.1, edition 2021 (`std::simd` excluded: nightly-only)
 
-**Primary Dependencies**: `wide` (raya-kernels only, added by this feature; spec 001 FR-007 amended), `thiserror` (raya-kernels, already allowed), `serde` and `serde_json` (bench metadata only, already allowed), `criterion` (dev, allowed). Nothing else: threads use `std::thread::scope`, CPU model comes from `/proc/cpuinfo`, `sysctl` or `PROCESSOR_IDENTIFIER`, rustc version and git commit come from a `build.rs` running `rustc -V` and `git rev-parse`.
+**Primary Dependencies**: `wide` (raya-kernels only, added by this feature; spec 001 FR-007 amended), `num_cpus` (raya-kernels only, added by this feature; spec 001 FR-007 amended), `thiserror` (raya-kernels, already allowed), `serde` and `serde_json` (bench metadata only, already allowed), `criterion` (dev, allowed). Nothing else: threads use `std::thread::scope`, CPU model (the core counts come from `num_cpus`) comes from `/proc/cpuinfo`, `sysctl` or `PROCESSOR_IDENTIFIER`, rustc version and git commit come from a `build.rs` running `rustc -V` and `git rev-parse`.
 
 **Storage**: Bench output under `results/kernel-bench/` (git-ignored). Optional PyTorch goldens read from `tests/data/` if present.
 
@@ -46,9 +46,9 @@ of SC-004, negative or not.
 | IV. Raya-L, fp32, inference only | Pass. fp32 only, no other dtypes. |
 | V. Portable first, SIMD optional | Pass. `wide` path is the default; `avx2`/`neon` are off by default with runtime dispatch and fallback. `unsafe` stays in `raya-kernels`. |
 | VI. Reference before kernel | Pass. Naive oracle lands first (tasks order) and tiled is tested against it. Bench may not run on a model forward; this spike benchmarks the kernel in isolation, which the notes label as kernel-only, not whole-forward. |
-| VII. Small surface, explicit errors | Pass with note. `wide` is a new dependency, authorised by the spec clarification and the spec 001 amendment. Shape or length errors return `KernelError`, not a panic. |
+| VII. Small surface, explicit errors | Pass with note. `wide` and `num_cpus` are new dependencies, authorised by the spec clarifications and the spec 001 amendment. Shape or length errors return `KernelError`, not a panic. |
 
-Post-design re-check: still pass. One spec deviation is recorded in research R6 (thread default).
+Post-design re-check: still pass. No spec deviations.
 
 ## Project Structure
 
@@ -95,5 +95,5 @@ reuse it.
 
 | Item | Why needed | Simpler alternative rejected |
 |---|---|---|
-| New dependency `wide` | Stable portable SIMD (clarified) | `std::simd` needs nightly; auto-vectorisation was offered and declined |
+| New dependencies `wide`, `num_cpus` | Stable portable SIMD (clarified); physical core count for the thread default | `std::simd` needs nightly; auto-vectorisation was offered and declined |
 | `build.rs` in raya-kernels | rustc and commit in metadata without a dependency | A `vergen`-style crate is a new dependency |

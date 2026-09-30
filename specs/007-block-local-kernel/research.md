@@ -38,13 +38,13 @@
 
 **Alternatives considered**: external profilers (`perf`) are not reproducible across the three OSes; sampling inside the bench would need a dependency.
 
-## R6. Thread default deviates from the clarified wording
+## R6. Thread default uses `num_cpus`
 
-**Decision**: The default thread count is `std::thread::available_parallelism()` (logical CPUs), not physical cores. Metadata records both the logical count and, where cheaply available (`/proc/cpuinfo` `cpu cores`, macOS `hw.physicalcpu`, Windows `NUMBER_OF_PROCESSORS` is logical only), the physical count or `null`.
+**Decision**: The default thread count is `num_cpus::get_physical()`, overridable by `RAYA_THREADS`. Metadata records both `num_cpus::get()` (logical) and `get_physical()`.
 
-**Rationale**: the standard library has no physical-core API and a crate such as `num_cpus` is outside the dependency list. On the i7-8700 (6C/12T) this matters, so the benches also run a 6-thread case by `RAYA_THREADS`. Spec wording is updated to "available parallelism".
+**Rationale**: matches the clarified spec (physical cores). `std::thread::available_parallelism` is logical only; on the i7-8700 (6C/12T) the difference matters. `num_cpus` is a small, widely used crate; spec 001 FR-007 is amended to allow it in `raya-kernels` only.
 
-**Alternatives considered**: adding `num_cpus` (another dependency amendment for little gain).
+**Alternatives considered**: `available_parallelism` with OS-specific parsing (rejected: more code than the dependency).
 
 ## R7. Goldens
 

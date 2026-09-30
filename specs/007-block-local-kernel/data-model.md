@@ -11,7 +11,7 @@ No persisted entities except bench output. Types live in `raya-kernels`.
 | `Naive` | none | single-threaded scalar; oracle and speed baseline |
 | `Tiled` | `threads`, `backend`, `mr`, `nc` | `backend` is `Portable`, `Avx2` or `Neon`; unavailable backend falls back to `Portable` at construction, never at run time |
 | `StageTimes` (feature `stage-timing`) | `qk_ns`, `softmax_ns`, `pv_ns`, `tiles` | summed over threads |
-| `BenchMetadata` | `cpu_model`, `logical_cpus`, `physical_cpus?`, `threads`, `features`, `rustflags`, `rustc`, `git_commit`, `timestamp`, `label` | `label` is always "cloud-agent hardware, indicative only" unless `RAYA_TARGET_MACHINE=1` |
+| `BenchMetadata` | `cpu_model`, `logical_cpus`, `physical_cpus`, `threads`, `features`, `rustflags`, `rustc`, `git_commit`, `timestamp`, `label` | `label` is always "cloud-agent hardware, indicative only" unless `RAYA_TARGET_MACHINE=1` |
 
 ## State and invariants
 

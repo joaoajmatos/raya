@@ -8,7 +8,7 @@
 ```json
 {
   "label": "cloud-agent hardware, indicative only",
-  "metadata": {"cpu_model": "", "logical_cpus": 0, "physical_cpus": null, "threads": 1,
+  "metadata": {"cpu_model": "", "logical_cpus": 0, "physical_cpus": 0, "threads": 1,
                "features": ["portable"], "rustflags": "", "rustc": "", "git_commit": "", "timestamp": ""},
   "results": [{"kernel": "naive|tiled", "seq": 2048, "heads": 16, "head_dim": 64, "threads": 1,
                "mean_ms": 0.0, "stddev_ms": 0.0, "samples": 0,
