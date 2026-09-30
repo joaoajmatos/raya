@@ -48,6 +48,15 @@ The researcher loads a Laya model config and gets typed fields: layer count, hid
 3. **Given** Laya's shape, **When** converted to `Segment { layers, attention: AttentionKind }`, **Then** it yields one segment and `Compression::None`.
 4. **Given** an `AttentionKind` other than the supported ones, or any other `Compression`, **When** requested, **Then** `Error::Unimplemented` is returned.
 
+## Clarifications
+
+### Session 2026-09-30
+
+- Q: Which files does "Laya's model config" mean? -> A: `encoder/config.json` (Hugging Face `ModernBertConfig`) plus `rl_agent_config.json`, read from a checkpoint directory (plan research R1).
+- Q: Where do "marker tokens" come from? -> A: the `[MASK]` marker id is a tokenizer property, not in either config file. The config records the special-token ids the encoder config has (pad, cls, sep, bos, eos); feature 005 resolves the marker.
+- Q: Laya interleaves global and local layers, but `Segment` holds one `AttentionKind`. -> A: add `AttentionKind::LayaInterleaved { global_every, window }` as the one supported kind. `Full`, `BlockLocal`, `Gas`, `Hybrid` stay defined and are `Unimplemented` (research R3). This adds one variant to FR-004.
+- Q: Do architecture fields have defaults? -> A: no; missing required fields are errors naming the JSON key (research R5).
+
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
@@ -55,7 +64,7 @@ The researcher loads a Laya model config and gets typed fields: layer count, hid
 - **FR-001**: Workspace at repo root with crates `raya-core` (config, errors, model shell), `raya-kernels` (empty modules and traits), `raya-weights`, `raya-tokenizer` (wraps the Hugging Face `tokenizers` crate), `raya-cli` (binary `raya`).
 - **FR-002**: Rust stable, edition 2021, pinned `rust-toolchain.toml`, workspace-level lints; `#![forbid(unsafe_code)]` in every crate except `raya-kernels`.
 - **FR-003**: Config types cover the fields named in User Story 2, derived from `reference/laya-sparse/laya/` and, once feature 002 exists, its exported config in `tests/data/`.
-- **FR-004**: Future-facing types from `docs/feasibility.md` section 4.2: `Segment`, `AttentionKind::{Full, BlockLocal{w}, Gas{s}, Hybrid}`, and `Compression` with the single variant `None`.
+- **FR-004**: Future-facing types from `docs/feasibility.md` section 4.2: `Segment`, `AttentionKind::{Full, BlockLocal{w}, Gas{s}, Hybrid}` plus `LayaInterleaved{global_every, window}` (see Clarifications), and `Compression` with the single variant `None`.
 - **FR-005**: CI per User Story 1 scenario 2, with caching.
 - **FR-006**: `README.md` states what Raya is, the scope limits of the constitution, and build/test commands.
 - **FR-007**: Dependencies limited to serde, serde_json, thiserror, safetensors, tokenizers, clap, criterion (dev) and anyhow (raya-cli only).
