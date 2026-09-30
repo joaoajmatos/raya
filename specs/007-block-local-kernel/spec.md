@@ -19,6 +19,7 @@
 - Q: Which mask do the oracle and tiled kernel compute (exact +/-64 window or the full 3-block span)? → A: Exact +/-64 window (`|i-j| <= 64`); block-pair tiling is only the method, with the mask applied inside each tile.
 - Q: How does the kernel handle a padded tail? → A: The `AttentionKernel` trait takes a per-sequence valid length; keys at or beyond it are masked, and rows with no valid keys output zeros (never NaN).
 - Q: What outcome counts as a win for the spike? → A: Relative bar: tiled at least 3x faster than naive at 8192 tokens, single-threaded, same machine; the 85 ms comparison is deferred to feature 008 on the target CPU.
+- Q: What CPU feature baseline does the default portable SIMD build assume? → A: Baseline target features only (no `target-cpu` flags); faster paths come only from the optional `avx2`/`neon` features with runtime dispatch. Bench metadata records the RUSTFLAGS used.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -78,7 +79,7 @@ Portable SIMD is used by default; `avx2` and `neon` micro-kernels are optional c
 
 - **FR-001**: `AttentionKernel` trait in `raya-kernels` (shared with feature 006; define it here if 006 has not merged). It takes a per-sequence valid length: keys at or beyond it are masked, and a row with no valid keys outputs zeros.
 - **FR-002**: Both implementations compute the exact +/-64 window mask. Implementations: `naive` oracle; `tiled` FlashAttention-style (Q tile, K/V tiles, register-blocked micro-GEMM, online softmax, never a full score matrix), multithreaded across (head, block).
-- **FR-003**: Portable SIMD (`std::simd` or `wide`) by default; `avx2` and `neon` optional features; neither is the default.
+- **FR-003**: Portable SIMD (`std::simd` or `wide`) by default; `avx2` and `neon` optional features; neither is the default. The default build uses baseline target features only (no `-C target-cpu` flags); the bench metadata records the RUSTFLAGS in effect.
 - **FR-004**: Supports sequences up to 8192, 16 heads, head dim 64, block 128.
 - **FR-005**: Criterion benches per User Story 2, with metadata JSON.
 - **FR-006**: `unsafe` allowed here only (constitution V).
