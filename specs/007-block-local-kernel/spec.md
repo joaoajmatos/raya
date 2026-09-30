@@ -12,13 +12,19 @@
 
 **Input**: User description: "Implement a naive and a tiled FlashAttention-style block-local attention kernel in raya-kernels, verify against the naive oracle, and benchmark one layer at 2K, 4K and 8K tokens. Negative results are welcome."
 
+## Clarifications
+
+### Session 2026-09-30
+
+- Q: Which mask do the oracle and tiled kernel compute (exact +/-64 window or the full 3-block span)? → A: Exact +/-64 window (`|i-j| <= 64`); block-pair tiling is only the method, with the mask applied inside each tile.
+
 ## User Scenarios & Testing *(mandatory)*
 
 The user is the researcher deciding whether a Rust kernel can beat the PyTorch block-local kernel (85 ms per layer at 8K on the i7-8700, `docs/feasibility.md` section 2.2).
 
 ### User Story 1 - Correct Kernels (Priority: P1)
 
-A naive per-score oracle and a tiled kernel implement block-local attention (block 128, each query block attends its own block plus one neighbour per side, equivalent to Laya's +/-64 window) and agree within 1e-5.
+A naive per-score oracle and a tiled kernel implement block-local attention (exact +/-64 window, `|i-j| <= 64`, matching Laya; tiled by 128-blocks, where each query block visits its own block plus one neighbour per side and the mask inside each tile enforces the window) and agree within 1e-5.
 
 **Why this priority**: A fast wrong kernel is worthless, and the oracle is reused by feature 006.
 
@@ -29,7 +35,7 @@ A naive per-score oracle and a tiled kernel implement block-local attention (blo
 1. **Given** lengths 1, 127, 128, 129, 1000, 2048 and a padded tail, **When** tiled and naive run, **Then** outputs agree within 1e-5.
 2. **Given** an all-masked row or extreme logits, **When** run, **Then** softmax is stable and no NaN appears.
 3. **Given** feature 002 goldens, **When** available, **Then** outputs also match the PyTorch kernel.
-4. **Given** the design, **When** documented, **Then** it states exactly how edge blocks and padding are handled and verifies semantic equivalence with the +/-64 window.
+4. **Given** the design, **When** documented, **Then** it states exactly how edge blocks and padding are handled and verifies that the kernel computes exactly the +/-64 window (no key outside it is attended, every key inside it is).
 
 ---
 
@@ -69,7 +75,7 @@ Portable SIMD is used by default; `avx2` and `neon` micro-kernels are optional c
 ### Functional Requirements
 
 - **FR-001**: `AttentionKernel` trait in `raya-kernels` (shared with feature 006; define it here if 006 has not merged).
-- **FR-002**: Implementations: `naive` oracle; `tiled` FlashAttention-style (Q tile, K/V tiles, register-blocked micro-GEMM, online softmax, never a full score matrix), multithreaded across (head, block).
+- **FR-002**: Both implementations compute the exact +/-64 window mask. Implementations: `naive` oracle; `tiled` FlashAttention-style (Q tile, K/V tiles, register-blocked micro-GEMM, online softmax, never a full score matrix), multithreaded across (head, block).
 - **FR-003**: Portable SIMD (`std::simd` or `wide`) by default; `avx2` and `neon` optional features; neither is the default.
 - **FR-004**: Supports sequences up to 8192, 16 heads, head dim 64, block 128.
 - **FR-005**: Criterion benches per User Story 2, with metadata JSON.
