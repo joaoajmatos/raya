@@ -22,7 +22,7 @@
 - Q: What CPU feature baseline does the default portable SIMD build assume? → A: Baseline target features only (no `target-cpu` flags); faster paths come only from the optional `avx2`/`neon` features with runtime dispatch. Bench metadata records the RUSTFLAGS used.
 - Q: How is the portable SIMD default implemented on the pinned stable toolchain? → A: With the `wide` crate, added to `raya-kernels` only; spec 001 FR-007 is amended to allow it (`std::simd` is nightly-only).
 - Q: What must the naive oracle look like so the 3x bar is meaningful? → A: A single-threaded scalar `f32` per-score loop over only the in-window keys (no tiling, no explicit SIMD, sensible memory access); it is both the correctness oracle and the speed baseline for SC-004.
-- Q: What is the default thread count for the tiled kernel and benchmarks? → A: Physical core count, overridable via `RAYA_THREADS`; benchmarks run at 1 thread (for SC-004) and at the default, and record the thread count in the JSON.
+- Q: What is the default thread count for the tiled kernel and benchmarks? → A: Available parallelism (std exposes logical CPUs only; see plan research R6), overridable via `RAYA_THREADS`; benchmarks run at 1 thread (for SC-004) and at the default, and record the thread count in the JSON.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -57,7 +57,7 @@ One-layer Criterion benchmarks at 2048, 4096 and 8192 tokens, with a per-stage b
 
 1. **Given** 16 heads, head dim 64, **When** benchmarked, **Then** timings exist for naive and tiled at each length.
 2. **Given** a run, **When** the JSON is written, **Then** it records CPU model, core count, feature flags, rustc version and git commit.
-3. **Given** thread count defaults to the physical core count and is overridable via `RAYA_THREADS`, **When** varied, **Then** results reflect it; benchmarks run at 1 thread and at the default, and the JSON records the thread count.
+3. **Given** thread count defaults to the available parallelism and is overridable via `RAYA_THREADS`, **When** varied, **Then** results reflect it; benchmarks run at 1 thread and at the default, and the JSON records the thread count.
 
 ---
 

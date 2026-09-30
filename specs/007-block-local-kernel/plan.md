@@ -1,0 +1,99 @@
+# Implementation Plan: Fused Block-Local Attention Kernel (Spike)
+
+**Branch**: `007-block-local-kernel` | **Date**: 2026-09-30 | **Spec**: [spec.md](spec.md)
+
+**Input**: Feature specification from `/specs/007-block-local-kernel/spec.md`
+
+## Summary
+
+Fill in the `AttentionKernel` trait in `raya-kernels` and add two implementations of exact +/-64 local
+attention: a scalar `naive` oracle (also the speed baseline) and a FlashAttention-style `tiled` kernel
+(online softmax, no score matrix, multithreaded over (head, query block), portable SIMD through `wide`, optional
+`avx2` and `neon` micro-kernels with runtime dispatch). Correctness tests compare tiled with naive at edge
+lengths; Criterion benches time one layer at 2K, 4K and 8K tokens and write a metadata JSON; a stage-timing
+feature gives the QK / softmax / PV breakdown. `docs/kernel-notes.md` records the conclusion against the 3x bar
+of SC-004, negative or not.
+
+## Technical Context
+
+**Language/Version**: Rust stable 1.94.1, edition 2021 (`std::simd` excluded: nightly-only)
+
+**Primary Dependencies**: `wide` (raya-kernels only, added by this feature; spec 001 FR-007 amended), `thiserror` (raya-kernels, already allowed), `serde` and `serde_json` (bench metadata only, already allowed), `criterion` (dev, allowed). Nothing else: threads use `std::thread::scope`, CPU model comes from `/proc/cpuinfo`, `sysctl` or `PROCESSOR_IDENTIFIER`, rustc version and git commit come from a `build.rs` running `rustc -V` and `git rev-parse`.
+
+**Storage**: Bench output under `results/kernel-bench/` (git-ignored). Optional PyTorch goldens read from `tests/data/` if present.
+
+**Testing**: `cargo test -p raya-kernels` (naive-vs-tiled equivalence, mask-exactness, NaN stability, backend dispatch); goldens test skips with a printed notice if feature 002 fixtures are absent.
+
+**Target Platform**: Linux x86_64 and macOS arm64 in CI (portable path); `avx2`/`neon` features tested only where the hardware exists; Windows supported.
+
+**Project Type**: Library crate plus a Criterion bench target.
+
+**Performance Goals**: SC-004: tiled >= 3x faster than naive at 8192 tokens, 16 heads, head dim 64, single-threaded, same machine. No absolute target in this feature.
+
+**Constraints**: fp32 only; no full score matrix (working set per task is O(tile)); `unsafe` only inside `raya-kernels`, and only if a micro-kernel needs it; baseline target features in default builds.
+
+**Scale/Scope**: Sequences up to 8192, 16 heads, head dim 64, window 64, block 128.
+
+## Constitution Check
+
+*GATE: Must pass before Phase 0 research. Re-checked after Phase 1 design.*
+
+| Principle | Status |
+|---|---|
+| I. Laya is the specification | Pass. Mask is exactly +/-64 (clarified); reference `local.py` could not be read (submodule empty in the authoring environment), so the goldens test and research R1 flag the check that must be made against it. |
+| II. Parity via golden fixtures | Pass with condition. PyTorch goldens are used when feature 002 output exists; otherwise the naive oracle is the reference and the notes say so. |
+| III. Measure, do not assume | Pass. Metadata JSON per run; cloud numbers labeled "cloud-agent hardware, indicative only"; the 85 ms comparison is stated invalid until run through 008. |
+| IV. Raya-L, fp32, inference only | Pass. fp32 only, no other dtypes. |
+| V. Portable first, SIMD optional | Pass. `wide` path is the default; `avx2`/`neon` are off by default with runtime dispatch and fallback. `unsafe` stays in `raya-kernels`. |
+| VI. Reference before kernel | Pass. Naive oracle lands first (tasks order) and tiled is tested against it. Bench may not run on a model forward; this spike benchmarks the kernel in isolation, which the notes label as kernel-only, not whole-forward. |
+| VII. Small surface, explicit errors | Pass with note. `wide` is a new dependency, authorised by the spec clarification and the spec 001 amendment. Shape or length errors return `KernelError`, not a panic. |
+
+Post-design re-check: still pass. One spec deviation is recorded in research R6 (thread default).
+
+## Project Structure
+
+### Documentation (this feature)
+
+```text
+specs/007-block-local-kernel/
+├── plan.md
+├── research.md
+├── data-model.md
+├── quickstart.md
+├── contracts/
+│   ├── kernel-api.md
+│   └── bench-output.md
+└── tasks.md             # /speckit-tasks
+```
+
+### Source Code (repository root)
+
+```text
+Cargo.toml                          # add wide, criterion to [workspace.dependencies]
+crates/raya-kernels/
+├── Cargo.toml                      # features: avx2, neon, stage-timing; build.rs
+├── build.rs                        # RUSTC_VERSION, GIT_COMMIT env for metadata
+├── src/
+│   ├── lib.rs
+│   ├── attention.rs                # AttentionKernel, AttnShape, AttnParams, KernelError
+│   ├── naive.rs                    # scalar oracle
+│   ├── tiled/{mod.rs, tile.rs, stages.rs}   # driver, online-softmax tile, stage timers
+│   ├── simd/{mod.rs, portable.rs, avx2.rs, neon.rs}   # micro-kernels and dispatch
+│   ├── threads.rs                  # RAYA_THREADS, work split over (head, block)
+│   └── meta.rs                     # BenchMetadata (CPU, cores, flags, rustc, commit)
+├── tests/{equivalence.rs, masking.rs, dispatch.rs, goldens.rs}
+└── benches/local_attention.rs
+docs/kernel-notes.md
+.gitignore                          # results/ already ignored
+```
+
+**Structure Decision**: all kernel code stays in `raya-kernels`; the bench lives in that crate so Criterion is a
+dev-dependency of one crate. The bench metadata module is in the library (behind no feature) so feature 008 can
+reuse it.
+
+## Complexity Tracking
+
+| Item | Why needed | Simpler alternative rejected |
+|---|---|---|
+| New dependency `wide` | Stable portable SIMD (clarified) | `std::simd` needs nightly; auto-vectorisation was offered and declined |
+| `build.rs` in raya-kernels | rustc and commit in metadata without a dependency | A `vergen`-style crate is a new dependency |
