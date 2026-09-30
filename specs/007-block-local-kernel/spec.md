@@ -18,6 +18,7 @@
 
 - Q: Which mask do the oracle and tiled kernel compute (exact +/-64 window or the full 3-block span)? → A: Exact +/-64 window (`|i-j| <= 64`); block-pair tiling is only the method, with the mask applied inside each tile.
 - Q: How does the kernel handle a padded tail? → A: The `AttentionKernel` trait takes a per-sequence valid length; keys at or beyond it are masked, and rows with no valid keys output zeros (never NaN).
+- Q: What outcome counts as a win for the spike? → A: Relative bar: tiled at least 3x faster than naive at 8192 tokens, single-threaded, same machine; the 85 ms comparison is deferred to feature 008 on the target CPU.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -87,6 +88,7 @@ Portable SIMD is used by default; `avx2` and `neon` micro-kernels are optional c
 - **SC-001**: Correctness tests pass at 1e-5 on every listed case.
 - **SC-002**: Benchmarks and breakdown are reproducible from documented commands.
 - **SC-003**: The notes state a clear conclusion, including a negative one if warranted.
+- **SC-004**: The spike is a win if tiled is at least 3x faster than naive at 8192 tokens (16 heads, head dim 64, single-threaded, same machine). Missing the bar is reported as a negative result; no absolute comparison with 85 ms is made in this feature.
 
 ## Assumptions
 
