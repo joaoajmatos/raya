@@ -37,6 +37,7 @@ impl Backend {
     }
 
     /// The requested backend if usable here, otherwise `Portable`.
+    #[must_use]
     pub fn or_fallback(self) -> Self {
         if self.is_available() {
             self
@@ -56,7 +57,15 @@ impl Backend {
 
 /// Scores for `mr` query rows against `nk` key rows: `out[r * NC + j] = q_r . k_j`.
 /// `q` is `mr * d`, `k` is `nk * d`, `nk <= NC`, `d % 8 == 0`.
-pub fn dot_tile(backend: Backend, q: &[f32], k: &[f32], d: usize, mr: usize, nk: usize, out: &mut [f32]) {
+pub fn dot_tile(
+    backend: Backend,
+    q: &[f32],
+    k: &[f32],
+    d: usize,
+    mr: usize,
+    nk: usize,
+    out: &mut [f32],
+) {
     match backend {
         #[cfg(all(feature = "avx2", target_arch = "x86_64"))]
         // SAFETY: `Backend::Avx2` is only produced by `detect`/`or_fallback` after the CPU

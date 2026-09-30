@@ -1,8 +1,8 @@
 use super::NC;
 use std::arch::x86_64::{
-    __m256, _mm256_add_ps, _mm256_castps256_ps128, _mm256_extractf128_ps, _mm256_fmadd_ps, _mm256_loadu_ps,
-    _mm256_set1_ps, _mm256_setzero_ps, _mm256_storeu_ps, _mm_add_ps, _mm_add_ss, _mm_cvtss_f32, _mm_movehdup_ps,
-    _mm_movehl_ps,
+    __m256, _mm256_add_ps, _mm256_castps256_ps128, _mm256_extractf128_ps, _mm256_fmadd_ps,
+    _mm256_loadu_ps, _mm256_set1_ps, _mm256_setzero_ps, _mm256_storeu_ps, _mm_add_ps, _mm_add_ss,
+    _mm_cvtss_f32, _mm_movehdup_ps, _mm_movehl_ps,
 };
 
 #[inline]
@@ -31,7 +31,11 @@ pub unsafe fn dot_tile(q: &[f32], k: &[f32], d: usize, mr: usize, nk: usize, out
             let mut c = 0;
             while c + 16 <= d {
                 a0 = _mm256_fmadd_ps(_mm256_loadu_ps(qr.add(c)), _mm256_loadu_ps(kj.add(c)), a0);
-                a1 = _mm256_fmadd_ps(_mm256_loadu_ps(qr.add(c + 8)), _mm256_loadu_ps(kj.add(c + 8)), a1);
+                a1 = _mm256_fmadd_ps(
+                    _mm256_loadu_ps(qr.add(c + 8)),
+                    _mm256_loadu_ps(kj.add(c + 8)),
+                    a1,
+                );
                 c += 16;
             }
             if c < d {

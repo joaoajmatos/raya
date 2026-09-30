@@ -18,7 +18,10 @@ pub struct TiledConfig {
 
 impl Default for TiledConfig {
     fn default() -> Self {
-        Self { threads: None, backend: Backend::detect() }
+        Self {
+            threads: None,
+            backend: Backend::detect(),
+        }
     }
 }
 
@@ -77,7 +80,10 @@ impl Tiled {
         tasks.reverse();
         let queue = Mutex::new(tasks);
         let total = Mutex::new(StageTimes::default());
-        let workers = self.threads.min(shape.heads * shape.seq.div_ceil(BLOCK)).max(1);
+        let workers = self
+            .threads
+            .min(shape.heads * shape.seq.div_ceil(BLOCK))
+            .max(1);
         let backend = self.backend;
         let run = || {
             let mut scratch = tile::Scratch::new(d);
@@ -130,6 +136,7 @@ impl AttentionKernel for Tiled {
         v: &[f32],
         out: &mut [f32],
     ) -> Result<(), KernelError> {
-        self.attend_with_stages(shape, params, q, k, v, out).map(|_| ())
+        self.attend_with_stages(shape, params, q, k, v, out)
+            .map(|_| ())
     }
 }

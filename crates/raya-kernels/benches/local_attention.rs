@@ -1,3 +1,4 @@
+#![allow(clippy::many_single_char_names, clippy::similar_names)]
 //! One-layer block-local attention timings: naive and tiled, both masks, 16 heads, head dim 64.
 //!
 //! `RAYA_BENCH_SEQS` (comma separated) overrides the default lengths 2048,4096,8192.
@@ -12,7 +13,9 @@ use std::time::Duration;
 use criterion::{BenchmarkId, Criterion, SamplingMode};
 use raya_kernels::meta::BenchMetadata;
 use raya_kernels::threads::default_threads;
-use raya_kernels::{AttentionKernel, AttnParams, AttnShape, Backend, Mask, Naive, Tiled, TiledConfig};
+use raya_kernels::{
+    AttentionKernel, AttnParams, AttnShape, Backend, Mask, Naive, Tiled, TiledConfig,
+};
 use serde_json::json;
 
 const HEADS: usize = 16;
@@ -38,15 +41,24 @@ fn seqs() -> Vec<usize> {
 }
 
 fn estimate(dir: &Path, func: &str, seq: usize) -> Option<(f64, f64)> {
-    let path = dir.join("local_attention").join(func).join(seq.to_string()).join("new/estimates.json");
+    let path = dir
+        .join("local_attention")
+        .join(func)
+        .join(seq.to_string())
+        .join("new/estimates.json");
     let v: serde_json::Value = serde_json::from_slice(&std::fs::read(path).ok()?).ok()?;
-    Some((v["mean"]["point_estimate"].as_f64()?, v["std_dev"]["point_estimate"].as_f64()?))
+    Some((
+        v["mean"]["point_estimate"].as_f64()?,
+        v["std_dev"]["point_estimate"].as_f64()?,
+    ))
 }
 
 fn main() {
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
     let criterion_dir = root.join("target/criterion");
-    let mut c = Criterion::default().output_directory(&criterion_dir).configure_from_args();
+    let mut c = Criterion::default()
+        .output_directory(&criterion_dir)
+        .configure_from_args();
     let default_t = default_threads();
     let backend = Backend::detect();
     let mut entries: Vec<Entry> = Vec::new();
@@ -59,7 +71,11 @@ fn main() {
         .measurement_time(Duration::from_secs(5));
 
     for seq in seqs() {
-        let shape = AttnShape { heads: HEADS, seq, head_dim: HEAD_DIM };
+        let shape = AttnShape {
+            heads: HEADS,
+            seq,
+            head_dim: HEAD_DIM,
+        };
         let (q, k, v) = common::qkv(shape, 42);
         let mut out = vec![0.0f32; shape.numel()];
         for mask in [Mask::Block3, Mask::Window64] {
@@ -69,14 +85,25 @@ fn main() {
             group.bench_with_input(BenchmarkId::new(&func, seq), &seq, |b, _| {
                 b.iter(|| Naive.attend(shape, params, &q, &k, &v, &mut out).unwrap());
             });
-            entries.push(Entry { kernel: "naive", mask, backend: "scalar", seq, threads: 1, func, stages: None });
+            entries.push(Entry {
+                kernel: "naive",
+                mask,
+                backend: "scalar",
+                seq,
+                threads: 1,
+                func,
+                stages: None,
+            });
 
             let mut thread_counts = vec![1];
             if default_t != 1 {
                 thread_counts.push(default_t);
             }
             for threads in thread_counts {
-                let tiled = Tiled::new(TiledConfig { threads: Some(threads), backend });
+                let tiled = Tiled::new(TiledConfig {
+                    threads: Some(threads),
+                    backend,
+                });
                 let func = format!("tiled_{}_{}_t{threads}", backend.name(), mask.name());
                 group.bench_with_input(BenchmarkId::new(&func, seq), &seq, |b, _| {
                     b.iter(|| tiled.attend(shape, params, &q, &k, &v, &mut out).unwrap());
@@ -85,7 +112,15 @@ fn main() {
                     .attend_with_stages(shape, params, &q, &k, &v, &mut out)
                     .unwrap()
                     .percentages();
-                entries.push(Entry { kernel: "tiled", mask, backend: backend.name(), seq, threads, func, stages });
+                entries.push(Entry {
+                    kernel: "tiled",
+                    mask,
+                    backend: backend.name(),
+                    seq,
+                    threads,
+                    func,
+                    stages,
+                });
             }
         }
     }

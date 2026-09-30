@@ -22,7 +22,11 @@ pub fn dot(a: &[f32], b: &[f32]) -> f32 {
             acc[t] = load8(&x[t * 8..]).mul_add(load8(&y[t * 8..]), acc[t]);
         }
     }
-    for (x, y) in ca.remainder().chunks_exact(8).zip(cb.remainder().chunks_exact(8)) {
+    for (x, y) in ca
+        .remainder()
+        .chunks_exact(8)
+        .zip(cb.remainder().chunks_exact(8))
+    {
         acc[0] = load8(x).mul_add(load8(y), acc[0]);
     }
     ((acc[0] + acc[1]) + (acc[2] + acc[3])).reduce_add()
@@ -40,7 +44,12 @@ fn dot2x2(q0: &[f32], q1: &[f32], k0: &[f32], k1: &[f32]) -> [f32; 4] {
         a10 = x1.mul_add(y0, a10);
         a11 = x1.mul_add(y1, a11);
     }
-    [a00.reduce_add(), a01.reduce_add(), a10.reduce_add(), a11.reduce_add()]
+    [
+        a00.reduce_add(),
+        a01.reduce_add(),
+        a10.reduce_add(),
+        a11.reduce_add(),
+    ]
 }
 
 pub fn dot_tile(q: &[f32], k: &[f32], d: usize, mr: usize, nk: usize, out: &mut [f32]) {
@@ -88,7 +97,10 @@ pub fn axpy_rows(acc: &mut [f32], p: &[f32], v: &[f32], d: usize) {
                 let ps = f32x8::splat(pj);
                 for t in (0..w).step_by(8) {
                     let o = load8(&acc[c0 + t..]);
-                    store8(&mut acc[c0 + t..], ps.mul_add(load8(&v[j * d + c0 + t..]), o));
+                    store8(
+                        &mut acc[c0 + t..],
+                        ps.mul_add(load8(&v[j * d + c0 + t..]), o),
+                    );
                 }
             }
         }

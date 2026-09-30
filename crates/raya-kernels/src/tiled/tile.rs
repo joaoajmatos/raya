@@ -14,7 +14,10 @@ pub struct Scratch {
 
 impl Scratch {
     pub fn new(head_dim: usize) -> Self {
-        Self { scores: [0.0; MR * NC], acc: vec![0.0; MR * head_dim] }
+        Self {
+            scores: [0.0; MR * NC],
+            acc: vec![0.0; MR * head_dim],
+        }
     }
 }
 
@@ -42,7 +45,17 @@ pub fn run_block(
         let (done, pad) = out[i0 * d..(i0 + mr) * d].split_at_mut(valid * d);
         pad.fill(0.0);
         if valid > 0 {
-            micro_tile(shape, params, backend, (q, k, v), gi0, valid, done, scratch, times);
+            micro_tile(
+                shape,
+                params,
+                backend,
+                (q, k, v),
+                gi0,
+                valid,
+                done,
+                scratch,
+                times,
+            );
         }
         i0 += mr;
     }
@@ -94,11 +107,16 @@ fn micro_tile(
                 tmax = tmax.max(*x);
             }
             let new_m = m[r].max(tmax);
-            let alpha = if m[r] == f32::NEG_INFINITY { 0.0 } else { (m[r] - new_m).exp() };
+            let alpha = if m[r] == f32::NEG_INFINITY {
+                0.0
+            } else {
+                (m[r] - new_m).exp()
+            };
             let sum = exp_shifted_sum(&mut row[a..z], new_m);
             l[r] = l[r] * alpha + sum;
+            let raised = new_m > m[r];
             m[r] = new_m;
-            if alpha != 1.0 {
+            if raised {
                 for x in &mut s.acc[r * d..(r + 1) * d] {
                     *x *= alpha;
                 }
@@ -106,11 +124,16 @@ fn micro_tile(
         }
         times.softmax_ns += clock.lap();
 
-        for r in 0..mr {
-            let (a, z) = bounds[r];
+        for (r, &(a, z)) in bounds.iter().enumerate().take(mr) {
             if a < z {
                 let p = &s.scores[r * NC + a..r * NC + z];
-                axpy_rows(backend, &mut s.acc[r * d..(r + 1) * d], p, &v[(kt + a) * d..(kt + z) * d], d);
+                axpy_rows(
+                    backend,
+                    &mut s.acc[r * d..(r + 1) * d],
+                    p,
+                    &v[(kt + a) * d..(kt + z) * d],
+                    d,
+                );
             }
         }
         times.pv_ns += clock.lap();
@@ -118,7 +141,10 @@ fn micro_tile(
     }
     for r in 0..mr {
         let inv = if l[r] > 0.0 { 1.0 / l[r] } else { 0.0 };
-        for (o, a) in out[r * d..(r + 1) * d].iter_mut().zip(&s.acc[r * d..(r + 1) * d]) {
+        for (o, a) in out[r * d..(r + 1) * d]
+            .iter_mut()
+            .zip(&s.acc[r * d..(r + 1) * d])
+        {
             *o = a * inv;
         }
     }

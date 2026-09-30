@@ -1,4 +1,5 @@
 //! Attention and GEMM kernels. The only crate allowed to use `unsafe`.
+#![allow(clippy::many_single_char_names, clippy::similar_names)]
 
 pub mod attention;
 pub mod gemm;

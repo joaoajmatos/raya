@@ -6,7 +6,9 @@ Work is specified in [specs/](specs/README.md) (Spec Kit; rules in
 [.specify/memory/constitution.md](.specify/memory/constitution.md)).
 
 **Status:** the workspace, CI and configuration types exist ([specs/001](specs/001-workspace-config/spec.md)).
-There is no model math yet; the `raya` subcommands are stubs.
+The block-local attention kernel spike ([specs/007](specs/007-block-local-kernel/spec.md)) is implemented in
+`raya-kernels`; results and conclusion are in [docs/kernel-notes.md](docs/kernel-notes.md). There is no model
+math yet; the `raya` subcommands are stubs.
 
 ## Scope limits
 
@@ -36,6 +38,9 @@ cargo fmt --all -- --check
 cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
 ```
+
+Kernel benchmarks: `cargo bench -p raya-kernels --bench local_attention` (see `docs/kernel-notes.md` for options
+and how to read the results; off-target numbers are indicative only).
 
 CI runs formatting, clippy, tests on Linux x86_64 and macOS arm64, and `cargo audit`. Windows builds are
 supported but not part of CI.

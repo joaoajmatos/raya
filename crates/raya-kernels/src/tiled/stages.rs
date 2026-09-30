@@ -1,4 +1,5 @@
-/// Time spent per stage, summed over workers. All zero unless built with `stage-timing`.
+/// Time spent per stage, summed over workers. The `*_ns` fields are zero unless built with
+/// `stage-timing`; `tiles` always counts.
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub struct StageTimes {
     pub qk_ns: u64,

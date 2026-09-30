@@ -27,7 +27,10 @@ fn cpu_model() -> String {
         }
     }
     #[cfg(target_os = "macos")]
-    if let Ok(o) = std::process::Command::new("sysctl").args(["-n", "machdep.cpu.brand_string"]).output() {
+    if let Ok(o) = std::process::Command::new("sysctl")
+        .args(["-n", "machdep.cpu.brand_string"])
+        .output()
+    {
         if o.status.success() {
             return String::from_utf8_lossy(&o.stdout).trim().to_string();
         }
@@ -62,7 +65,12 @@ impl BenchMetadata {
             .duration_since(std::time::UNIX_EPOCH)
             .map_or(0, |d| d.as_secs());
         Self {
-            label: if on_target { "target machine" } else { LABEL_CLOUD }.to_string(),
+            label: if on_target {
+                "target machine"
+            } else {
+                LABEL_CLOUD
+            }
+            .to_string(),
             cpu_model: cpu_model(),
             logical_cpus: num_cpus::get(),
             physical_cpus: num_cpus::get_physical(),
@@ -84,8 +92,16 @@ mod tests {
     fn serialises_every_field() {
         let json = serde_json::to_value(BenchMetadata::collect(2)).unwrap();
         for key in [
-            "label", "cpu_model", "logical_cpus", "physical_cpus", "threads", "features", "rustflags", "rustc",
-            "git_commit", "timestamp",
+            "label",
+            "cpu_model",
+            "logical_cpus",
+            "physical_cpus",
+            "threads",
+            "features",
+            "rustflags",
+            "rustc",
+            "git_commit",
+            "timestamp",
         ] {
             assert!(json.get(key).is_some(), "missing {key}");
         }

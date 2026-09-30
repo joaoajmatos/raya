@@ -19,17 +19,30 @@ pub fn rand_vec(n: usize, seed: u64) -> Vec<f32> {
 
 pub fn qkv(shape: AttnShape, seed: u64) -> (Vec<f32>, Vec<f32>, Vec<f32>) {
     let n = shape.numel();
-    (rand_vec(n, seed), rand_vec(n, seed + 1), rand_vec(n, seed + 2))
+    (
+        rand_vec(n, seed),
+        rand_vec(n, seed + 1),
+        rand_vec(n, seed + 2),
+    )
 }
 
 pub fn max_abs_diff(a: &[f32], b: &[f32]) -> f32 {
     assert_eq!(a.len(), b.len());
-    a.iter().zip(b).map(|(x, y)| (x - y).abs()).fold(0.0, f32::max)
+    a.iter()
+        .zip(b)
+        .map(|(x, y)| (x - y).abs())
+        .fold(0.0, f32::max)
 }
 
 /// Independent dense reference: full `[seq, seq]` scores, boolean mask (as `reference.py`),
 /// softmax, zeros for rows without an allowed key. Only for small `seq`.
-pub fn dense_reference(shape: AttnShape, params: &AttnParams, q: &[f32], k: &[f32], v: &[f32]) -> Vec<f32> {
+pub fn dense_reference(
+    shape: AttnShape,
+    params: &AttnParams,
+    q: &[f32],
+    k: &[f32],
+    v: &[f32],
+) -> Vec<f32> {
     let (s, d) = (shape.seq, shape.head_dim);
     let mut out = vec![0.0f32; shape.numel()];
     for h in 0..shape.heads {
@@ -46,7 +59,9 @@ pub fn dense_reference(shape: AttnShape, params: &AttnParams, q: &[f32], k: &[f3
             let mut scores = vec![f32::NEG_INFINITY; s];
             for (j, sc) in scores.iter_mut().enumerate() {
                 if allowed(j) {
-                    let dot: f32 = (0..d).map(|c| q[base + i * d + c] * k[base + j * d + c]).sum();
+                    let dot: f32 = (0..d)
+                        .map(|c| q[base + i * d + c] * k[base + j * d + c])
+                        .sum();
                     *sc = dot * params.scale;
                 }
             }

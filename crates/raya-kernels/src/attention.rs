@@ -10,7 +10,11 @@ pub enum KernelError {
     #[error("invalid shape: {0}")]
     Shape(String),
     #[error("buffer `{name}` has length {got}, expected {expected}")]
-    Length { name: &'static str, got: usize, expected: usize },
+    Length {
+        name: &'static str,
+        got: usize,
+        expected: usize,
+    },
     #[error("unsupported: {0}")]
     Unsupported(String),
 }
@@ -80,7 +84,12 @@ impl AttnParams {
     /// Default parameters: block 128 and scale `1/sqrt(head_dim)`.
     #[allow(clippy::cast_precision_loss)]
     pub fn new(mask: Mask, valid_len: usize, head_dim: usize) -> Self {
-        Self { mask, block: BLOCK, valid_len, scale: 1.0 / (head_dim as f32).sqrt() }
+        Self {
+            mask,
+            block: BLOCK,
+            valid_len,
+            scale: 1.0 / (head_dim as f32).sqrt(),
+        }
     }
 }
 
@@ -113,10 +122,15 @@ pub fn validate(
     out: &[f32],
 ) -> Result<(), KernelError> {
     if shape.heads == 0 || shape.head_dim == 0 {
-        return Err(KernelError::Shape("heads and head_dim must be at least 1".into()));
+        return Err(KernelError::Shape(
+            "heads and head_dim must be at least 1".into(),
+        ));
     }
-    if shape.head_dim % 8 != 0 {
-        return Err(KernelError::Shape(format!("head_dim {} is not a multiple of 8", shape.head_dim)));
+    if !shape.head_dim.is_multiple_of(8) {
+        return Err(KernelError::Shape(format!(
+            "head_dim {} is not a multiple of 8",
+            shape.head_dim
+        )));
     }
     if params.valid_len > shape.seq {
         return Err(KernelError::Shape(format!(
@@ -125,12 +139,19 @@ pub fn validate(
         )));
     }
     if params.block != BLOCK {
-        return Err(KernelError::Unsupported(format!("block {} (only {BLOCK} is supported)", params.block)));
+        return Err(KernelError::Unsupported(format!(
+            "block {} (only {BLOCK} is supported)",
+            params.block
+        )));
     }
     let expected = shape.numel();
     for (name, buf) in [("q", q), ("k", k), ("v", v), ("out", out)] {
         if buf.len() != expected {
-            return Err(KernelError::Length { name, got: buf.len(), expected });
+            return Err(KernelError::Length {
+                name,
+                got: buf.len(),
+                expected,
+            });
         }
     }
     Ok(())
