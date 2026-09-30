@@ -6,8 +6,26 @@ rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
 publish.workspace = true
+build = "build.rs"
+
+[features]
+avx2 = []
+neon = []
+stage-timing = []
 
 [dependencies]
+num_cpus.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+wide.workspace = true
+
+[dev-dependencies]
+criterion.workspace = true
+
+[[bench]]
+name = "local_attention"
+harness = false
 
 [lints]
 workspace = true

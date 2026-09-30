@@ -29,6 +29,7 @@ jobs:
           components: clippy
       - uses: Swatinem/rust-cache@v2
       - run: cargo clippy --workspace --all-targets -- -D warnings
+      - run: cargo clippy -p raya-kernels --all-targets --features avx2,stage-timing -- -D warnings
 
   test:
     strategy:
@@ -43,6 +44,9 @@ jobs:
           toolchain: 1.94.1
       - uses: Swatinem/rust-cache@v2
       - run: cargo test --workspace
+      - run: cargo test -p raya-kernels --features stage-timing
+      - run: cargo test -p raya-kernels --features avx2
+        if: runner.os == 'Linux'
 
   audit:
     runs-on: ubuntu-latest
