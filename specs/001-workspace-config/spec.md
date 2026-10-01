@@ -4,7 +4,9 @@
 
 **Created**: 2026-09-30
 
-**Status**: Draft
+**Status**: Implemented
+
+**Verification**: local `cargo build`, `cargo fmt --check`, `cargo clippy -D warnings` and `cargo test` (workspace) pass; CI is verified on GitHub only.
 
 **Origin**: Prompt P1 of the former `docs/agent-prompts.md`.
 
