@@ -1,0 +1,395 @@
+{
+  "keys": {
+    "act_head.0.bias": {
+      "dtype": "float32",
+      "shape": [
+        256
+      ]
+    },
+    "act_head.0.weight": {
+      "dtype": "float32",
+      "shape": [
+        256,
+        68
+      ]
+    },
+    "act_head.2.bias": {
+      "dtype": "float32",
+      "shape": [
+        2
+      ]
+    },
+    "act_head.2.weight": {
+      "dtype": "float32",
+      "shape": [
+        2,
+        256
+      ]
+    },
+    "encoder.embeddings.norm.weight": {
+      "dtype": "float32",
+      "shape": [
+        64
+      ]
+    },
+    "encoder.embeddings.tok_embeddings.weight": {
+      "dtype": "float32",
+      "shape": [
+        231,
+        64
+      ]
+    },
+    "encoder.final_norm.weight": {
+      "dtype": "float32",
+      "shape": [
+        64
+      ]
+    },
+    "encoder.layers.0.attn.Wo.weight": {
+      "dtype": "float32",
+      "shape": [
+        64,
+        64
+      ]
+    },
+    "encoder.layers.0.attn.Wqkv.weight": {
+      "dtype": "float32",
+      "shape": [
+        192,
+        64
+      ]
+    },
+    "encoder.layers.0.mlp.Wi.weight": {
+      "dtype": "float32",
+      "shape": [
+        256,
+        64
+      ]
+    },
+    "encoder.layers.0.mlp.Wo.weight": {
+      "dtype": "float32",
+      "shape": [
+        64,
+        128
+      ]
+    },
+    "encoder.layers.0.mlp_norm.weight": {
+      "dtype": "float32",
+      "shape": [
+        64
+      ]
+    },
+    "encoder.layers.1.attn.Wo.weight": {
+      "dtype": "float32",
+      "shape": [
+        64,
+        64
+      ]
+    },
+    "encoder.layers.1.attn.Wqkv.weight": {
+      "dtype": "float32",
+      "shape": [
+        192,
+        64
+      ]
+    },
+    "encoder.layers.1.attn_norm.weight": {
+      "dtype": "float32",
+      "shape": [
+        64
+      ]
+    },
+    "encoder.layers.1.mlp.Wi.weight": {
+      "dtype": "float32",
+      "shape": [
+        256,
+        64
+      ]
+    },
+    "encoder.layers.1.mlp.Wo.weight": {
+      "dtype": "float32",
+      "shape": [
+        64,
+        128
+      ]
+    },
+    "encoder.layers.1.mlp_norm.weight": {
+      "dtype": "float32",
+      "shape": [
+        64
+      ]
+    },
+    "encoder.layers.2.attn.Wo.weight": {
+      "dtype": "float32",
+      "shape": [
+        64,
+        64
+      ]
+    },
+    "encoder.layers.2.attn.Wqkv.weight": {
+      "dtype": "float32",
+      "shape": [
+        192,
+        64
+      ]
+    },
+    "encoder.layers.2.attn_norm.weight": {
+      "dtype": "float32",
+      "shape": [
+        64
+      ]
+    },
+    "encoder.layers.2.mlp.Wi.weight": {
+      "dtype": "float32",
+      "shape": [
+        256,
+        64
+      ]
+    },
+    "encoder.layers.2.mlp.Wo.weight": {
+      "dtype": "float32",
+      "shape": [
+        64,
+        128
+      ]
+    },
+    "encoder.layers.2.mlp_norm.weight": {
+      "dtype": "float32",
+      "shape": [
+        64
+      ]
+    },
+    "head.layers.0.linear1.bias": {
+      "dtype": "float32",
+      "shape": [
+        256
+      ]
+    },
+    "head.layers.0.linear1.weight": {
+      "dtype": "float32",
+      "shape": [
+        256,
+        64
+      ]
+    },
+    "head.layers.0.linear2.bias": {
+      "dtype": "float32",
+      "shape": [
+        64
+      ]
+    },
+    "head.layers.0.linear2.weight": {
+      "dtype": "float32",
+      "shape": [
+        64,
+        256
+      ]
+    },
+    "head.layers.0.norm1.bias": {
+      "dtype": "float32",
+      "shape": [
+        64
+      ]
+    },
+    "head.layers.0.norm1.weight": {
+      "dtype": "float32",
+      "shape": [
+        64
+      ]
+    },
+    "head.layers.0.norm2.bias": {
+      "dtype": "float32",
+      "shape": [
+        64
+      ]
+    },
+    "head.layers.0.norm2.weight": {
+      "dtype": "float32",
+      "shape": [
+        64
+      ]
+    },
+    "head.layers.0.self_attn.in_proj_bias": {
+      "dtype": "float32",
+      "shape": [
+        192
+      ]
+    },
+    "head.layers.0.self_attn.in_proj_weight": {
+      "dtype": "float32",
+      "shape": [
+        192,
+        64
+      ]
+    },
+    "head.layers.0.self_attn.out_proj.bias": {
+      "dtype": "float32",
+      "shape": [
+        64
+      ]
+    },
+    "head.layers.0.self_attn.out_proj.weight": {
+      "dtype": "float32",
+      "shape": [
+        64,
+        64
+      ]
+    },
+    "scorer.0.bias": {
+      "dtype": "float32",
+      "shape": [
+        64
+      ]
+    },
+    "scorer.0.weight": {
+      "dtype": "float32",
+      "shape": [
+        64
+      ]
+    },
+    "scorer.1.bias": {
+      "dtype": "float32",
+      "shape": [
+        64
+      ]
+    },
+    "scorer.1.weight": {
+      "dtype": "float32",
+      "shape": [
+        64,
+        64
+      ]
+    },
+    "scorer.3.bias": {
+      "dtype": "float32",
+      "shape": [
+        1
+      ]
+    },
+    "scorer.3.weight": {
+      "dtype": "float32",
+      "shape": [
+        1,
+        64
+      ]
+    },
+    "temperature": {
+      "dtype": "float32",
+      "shape": [
+        3
+      ]
+    },
+    "type_emb.weight": {
+      "dtype": "float32",
+      "shape": [
+        3,
+        64
+      ]
+    }
+  },
+  "meta": {
+    "agent_config": {
+      "act_costs": {
+        "abstain": 0.1
+      },
+      "encoder": "tiny-modernbert-fixture",
+      "head_layers": 1,
+      "head_max_len": 96,
+      "laya_sparse_fixture": true,
+      "max_len": 256,
+      "temperature": [
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    "device": "cpu",
+    "dtype": "float32",
+    "encoder_config": {
+      "architectures": null,
+      "attention_bias": false,
+      "attention_dropout": 0.0,
+      "bos_token_id": 2,
+      "chunk_size_feed_forward": 0,
+      "classifier_activation": "gelu",
+      "classifier_bias": false,
+      "classifier_dropout": 0.0,
+      "classifier_pooling": "cls",
+      "cls_token_id": 2,
+      "decoder_bias": true,
+      "deterministic_flash_attn": false,
+      "dtype": null,
+      "embedding_dropout": 0.0,
+      "eos_token_id": 3,
+      "global_attn_every_n_layers": 2,
+      "hidden_activation": "gelu",
+      "hidden_size": 64,
+      "id2label": {
+        "0": "LABEL_0",
+        "1": "LABEL_1"
+      },
+      "initializer_cutoff_factor": 2.0,
+      "initializer_range": 0.02,
+      "intermediate_size": 128,
+      "is_encoder_decoder": false,
+      "label2id": {
+        "LABEL_0": 0,
+        "LABEL_1": 1
+      },
+      "layer_types": [
+        "full_attention",
+        "sliding_attention",
+        "full_attention"
+      ],
+      "local_attention": 16,
+      "max_position_embeddings": 2048,
+      "mlp_bias": false,
+      "mlp_dropout": 0.0,
+      "model_type": "modernbert",
+      "norm_bias": false,
+      "norm_eps": 1e-05,
+      "num_attention_heads": 2,
+      "num_hidden_layers": 3,
+      "output_attentions": false,
+      "output_hidden_states": false,
+      "pad_token_id": 0,
+      "problem_type": null,
+      "return_dict": true,
+      "rope_parameters": {
+        "full_attention": {
+          "rope_theta": 160000.0,
+          "rope_type": "default"
+        },
+        "sliding_attention": {
+          "rope_theta": 10000.0,
+          "rope_type": "default"
+        }
+      },
+      "sep_token_id": 3,
+      "sparse_pred_ignore_index": -100,
+      "sparse_prediction": false,
+      "tie_word_embeddings": true,
+      "transformers_version": "5.18.0",
+      "vocab_size": 231
+    },
+    "fixture_hidden": 64,
+    "git_dirty": false,
+    "kind": "weights-inventory",
+    "laya_diff_empty": true,
+    "laya_sparse_commit": "cefb300e8e6258d36b7d03a51b31fc6a2fdcc3be",
+    "mode": "eval",
+    "model": "fixture",
+    "schema_version": 1,
+    "seed": 0,
+    "threads": 1,
+    "versions": {
+      "python": "3.11.1",
+      "safetensors": "0.8.0",
+      "tokenizers": "0.23.2",
+      "torch": "2.14.0+cpu",
+      "transformers": "5.18.0"
+    }
+  },
+  "n_keys": 44,
+  "n_parameters": 210822
+}

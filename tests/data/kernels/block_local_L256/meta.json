@@ -1,0 +1,38 @@
+{
+  "block": 128,
+  "case": "block_local_L256",
+  "device": "cpu",
+  "dtype": "float32",
+  "empty_row_convention": "a query with no allowed key returns zeros",
+  "git_dirty": false,
+  "head_dim": 64,
+  "heads": 16,
+  "impl": "block_local",
+  "input_seed": 256,
+  "kernel": "experiments/kernels/local.py",
+  "kind": "kernel-golden",
+  "laya_diff_empty": true,
+  "laya_sparse_commit": "cefb300e8e6258d36b7d03a51b31fc6a2fdcc3be",
+  "length": 256,
+  "lengths": [
+    256
+  ],
+  "max_abs_diff": 1.0132789611816406e-06,
+  "mode": "eval",
+  "note": "block_local is block-granular (query block i sees key blocks i-1, i, i+1), not +/-64 keys",
+  "pattern": "block_local",
+  "reference": "experiments/kernels/reference.py:reference_attention",
+  "scale": "1/sqrt(head_dim)",
+  "schema_version": 1,
+  "seed": 0,
+  "selection_blocks": 4,
+  "threads": 1,
+  "tolerance": 1e-05,
+  "versions": {
+    "python": "3.11.1",
+    "safetensors": "0.8.0",
+    "tokenizers": "0.23.2",
+    "torch": "2.14.0+cpu",
+    "transformers": "5.18.0"
+  }
+}
