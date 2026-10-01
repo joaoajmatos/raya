@@ -4,7 +4,9 @@
 
 **Created**: 2026-09-30
 
-**Status**: Draft
+**Status**: Implemented
+
+**Verification**: local `cargo build`, `cargo fmt --check`, `cargo clippy -D warnings` (including `raya-kernels` with `--features avx2`) and `cargo test` (workspace) pass; CI is verified on GitHub only. The SC-004 speedup figures in `docs/kernel-notes.md` come from cloud-agent hardware (4 vCPU Xeon) and are indicative only, not i7-8700 results. US1 scenario 3 (PyTorch goldens) is met: the laya-sparse `cefb300` `block_local_L256` golden is vendored in `tests/data/kernels/`, and `tests/goldens.rs` checks `Naive` and `Tiled` (`Block3`) against it at 1e-5. `Window64` has no golden.
 
 **Origin**: Prompt P6 of the former `docs/agent-prompts.md`.
 
