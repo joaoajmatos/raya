@@ -717,6 +717,7 @@ version = "0.0.0"
 dependencies = [
  "criterion",
  "num_cpus",
+ "safetensors",
  "serde",
  "serde_json",
  "thiserror",

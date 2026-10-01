@@ -22,6 +22,7 @@ wide.workspace = true
 
 [dev-dependencies]
 criterion.workspace = true
+safetensors.workspace = true
 
 [[bench]]
 name = "local_attention"
