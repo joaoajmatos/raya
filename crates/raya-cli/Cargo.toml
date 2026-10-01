@@ -10,6 +10,12 @@ publish.workspace = true
 [dependencies]
 anyhow.workspace = true
 clap.workspace = true
+raya-core.workspace = true
+raya-weights.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true
+tempfile.workspace = true
 
 [lints]
 workspace = true

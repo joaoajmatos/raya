@@ -7,6 +7,6 @@ pub mod model;
 pub mod shape;
 
 pub use config::{Activation, AgentConfig, EncoderConfig, HeadConfig, ModelConfig};
-pub use error::{Error, Result};
+pub use error::{Error, LoadReport, Result, ShapeMismatch};
 pub use model::Model;
 pub use shape::{AttentionKind, Compression, ModelShape, Segment};

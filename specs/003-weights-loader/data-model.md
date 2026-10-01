@@ -13,7 +13,7 @@ Enum identifying one parameter: `TokEmbeddings`, `EmbedNorm`, `AttnNorm(layer)`,
 - Built only by `load(path, &ModelConfig)` and `load_dir(dir)`; a store is always complete and validated.
 
 ## LoadReport (`raya-core/src/error.rs`)
-`path: PathBuf`, `missing: Vec<String>`, `unused: Vec<String>`, `shape: Vec<ShapeMismatch { name, expected, found }>`, plus an optional `detail: Option<String>` for header-parse failures. `Error::Weights(LoadReport)`.
+`path: PathBuf`, `missing: Vec<String>`, `unused: Vec<String>`, `shape: Vec<ShapeMismatch { name, expected, found }>`, plus an optional `detail: Option<String>` for header-parse failures. `Error::Weights(Box<LoadReport>)` (boxed: clippy `result_large_err`).
 
 ## State
 None. Load is a pure function of (file, config); the store is immutable.

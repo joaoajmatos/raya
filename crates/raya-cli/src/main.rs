@@ -1,5 +1,8 @@
 #![forbid(unsafe_code)]
 
+mod info;
+
+use std::path::PathBuf;
 use std::process::ExitCode;
 
 use clap::{Parser, Subcommand};
@@ -17,8 +20,11 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Command {
-    /// Inspect a checkpoint (feature 003)
-    Info,
+    /// Inspect a checkpoint directory
+    Info {
+        /// Directory with `model.safetensors`, `rl_agent_config.json` and `encoder/config.json`
+        dir: PathBuf,
+    },
     /// Run a decision (feature 006)
     Predict,
     /// Benchmark on this machine (feature 008)
@@ -27,7 +33,18 @@ enum Command {
 
 fn main() -> ExitCode {
     let feature = match Cli::parse().command {
-        Command::Info => "003",
+        Command::Info { dir } => {
+            return match raya_weights::load_dir(&dir) {
+                Ok((config, store)) => {
+                    print!("{}", info::render(&dir, &config, &store));
+                    ExitCode::SUCCESS
+                }
+                Err(err) => {
+                    eprintln!("{err}");
+                    ExitCode::from(1)
+                }
+            };
+        }
         Command::Predict => "006",
         Command::Bench => "008",
     };

@@ -9,7 +9,7 @@ fn raya(args: &[&str]) -> std::process::Output {
 
 #[test]
 fn stubs_report_not_implemented_and_exit_2() {
-    for (command, feature) in [("info", "003"), ("predict", "006"), ("bench", "008")] {
+    for (command, feature) in [("predict", "006"), ("bench", "008")] {
         let out = raya(&[command]);
         assert_eq!(out.status.code(), Some(2), "{command}");
         assert!(out.stdout.is_empty(), "{command} wrote to stdout");

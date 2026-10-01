@@ -14,6 +14,6 @@ mapping::expected(&ModelConfig) -> Result<Vec<Entry>>
 Behavior:
 - `config` goes through `ModelShape::from_config` and `ensure_supported` before the file is opened.
 - Success implies: every expected key present exactly once, shapes equal, dtype F32, no unexpected tensor.
-- Failure: `Error::Io { path }` (cannot read), `Error::Weights(report)` (missing, unused, shape, header parse), `Error::Unimplemented` (non-F32 dtype, bias-enabled config), `Error::Config` (config validation).
+- Failure: `Error::Io { path }` (cannot read), `Error::Weights(Box<LoadReport>)` (missing, unused, shape, header parse), `Error::Unimplemented` (non-F32 dtype, bias-enabled config), `Error::Config` (config validation).
 - Slices alias the store's single buffer; no per-tensor allocation.
 - The placeholder `SafeTensors` re-export in `raya-weights/src/lib.rs` is removed.
