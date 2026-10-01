@@ -1,4 +1,4 @@
-# Block-local attention kernel: notes (feature 007)
+# Block-local attention kernel: notes (raya:007)
 
 Spike on whether a Rust FlashAttention-style kernel is competitive for Laya's block-local attention.
 Spec: [specs/007-block-local-kernel](../specs/007-block-local-kernel/spec.md).
@@ -46,7 +46,9 @@ boolean mask as in `reference.py`) at 1e-6; `Tiled` is checked against `Naive` a
 release) 4096 and 8192. Mask exactness is tested for every `(i, j)` pair at block and window edges; extreme
 logits (scores around 1e4) stay finite and match; results are bit-identical between 1 and 4 threads. The AVX2
 path passes the same tests. NEON compiles for `aarch64-unknown-linux-gnu` but has not been run on hardware.
-PyTorch goldens (feature 002) are not vendored yet; `tests/goldens.rs` skips with a message.
+PyTorch goldens (`laya:004`, vendored from laya-sparse `cefb300` into `tests/data/kernels/`) cover `block_local` at
+length 256 only (16 heads, head dim 64); `tests/goldens.rs` checks `Naive` and `Tiled` (`Block3`) against both the
+native reference and the PyTorch kernel output at 1e-5. `Window64` and longer lengths have no golden.
 
 ## How to reproduce
 
@@ -140,12 +142,12 @@ accelerated by the AVX2 micro-kernels, which is a hypothesis, not measured.
 
 Not tried (follow-ups, in order of expected value): transposing K per block for an outer-product QK
 (`MR x NR` register tile), AVX-512, fusing the scale into Q once, tuning `MR` and the key tile width, a
-separate measurement of tiling versus SIMD contribution, and whole-forward measurements through feature 008.
+separate measurement of tiling versus SIMD contribution, and whole-forward measurements through raya:008.
 
 ## Limits of this spike
 
 - Kernel-only benchmark, one layer, random inputs uniform in [-1, 1]; not a whole-forward measurement.
 - Single machine, shared cloud vCPUs, 10 samples; differences of under about 10% are within noise.
 - NEON untested on hardware; no macOS arm64 timings.
-- PyTorch goldens from feature 002 not yet available; the oracle is checked against an independent dense
-  reference instead.
+- PyTorch goldens exist only for `block_local` at length 256; longer lengths and `Window64` are checked against
+  an independent dense reference and against `Naive` instead.

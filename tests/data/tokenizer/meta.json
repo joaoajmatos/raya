@@ -1,0 +1,46 @@
+{
+  "builder": "laya/common.py:build_sequence via Agent._encode_state",
+  "device": "cpu",
+  "dtype": "float32",
+  "fixture_hidden": 64,
+  "git_dirty": false,
+  "kind": "tokenizer-golden",
+  "laya_diff_empty": true,
+  "laya_sparse_commit": "cefb300e8e6258d36b7d03a51b31fc6a2fdcc3be",
+  "mask_token": "[MASK]",
+  "mode": "eval",
+  "model": "fixture",
+  "option_token_cap": 48,
+  "records": [
+    "empty_document",
+    "exact_max_len",
+    "long_document",
+    "marker_like_strings",
+    "max_len_plus_one",
+    "options_over_head_budget",
+    "primary_one_question",
+    "several_questions",
+    "state_conversation_list",
+    "state_dict",
+    "unicode"
+  ],
+  "schema_version": 1,
+  "seed": 0,
+  "special_tokens": {
+    "cls": 2,
+    "mask": 4,
+    "pad": 0,
+    "sep": 3,
+    "unk": 1
+  },
+  "threads": 1,
+  "tokenizer_file": "tokenizer.json",
+  "versions": {
+    "python": "3.11.1",
+    "safetensors": "0.8.0",
+    "tokenizers": "0.23.2",
+    "torch": "2.14.0+cpu",
+    "transformers": "5.18.0"
+  },
+  "vocab_size": 231
+}

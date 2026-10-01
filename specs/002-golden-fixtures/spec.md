@@ -1,6 +1,6 @@
 # Feature Specification: Golden Fixtures from Laya
 
-**Feature Branch**: `raya/p2-golden-fixtures` **in laya-sparse** (specification directory only; no speckit branch created)
+**Feature Branch**: `raya/p2-golden-fixtures` **in laya-sparse** (specification directory only; implemented in laya-sparse as [laya:004-golden-fixtures](../../reference/laya-sparse/specs/004-golden-fixtures/spec.md), laya-sparse `cefb300`)
 
 **Created**: 2026-09-30
 
@@ -69,7 +69,7 @@ The implementer gets random q/k/v inputs with the native-layer reference output 
 - **FR-001**: New module `experiments/golden/`, invoked as `python -m experiments golden ...` (`experiments/` is at the laya-sparse repo root, not under `laya/`).
 - **FR-002**: Subcommands `weights-inventory`, `export`, `kernels`.
 - **FR-003**: Everything runs offline on the existing tiny fixture model from `tests/experiments/`.
-- **FR-004**: Output goes to `artifacts/raya-golden/`; only tiny-model cases (under 5 MB total) are committable, everything else git-ignored.
+- **FR-004**: Output goes to `artifacts/raya-golden/`; only tiny-model cases and the L256 kernel goldens (about 16 MB total, under 20 MB) are committable, everything else git-ignored.
 - **FR-005**: Offline pytest in `tests/experiments/` covers file presence, shapes and byte-identical re-runs.
 - **FR-006**: Decision-head goldens include the `type_emb` addition, marker gathering, `scorer` logits, and the `act_head` logits, since Laya's `DecisionModel.forward` returns both.
 
@@ -77,7 +77,7 @@ The implementer gets random q/k/v inputs with the native-layer reference output 
 
 - **SC-001**: Pytest passes offline within the repo's normal test budget.
 - **SC-002**: Two exports produce identical bytes.
-- **SC-003**: Committed fixtures total under 5 MB.
+- **SC-003**: Committed fixtures total under 20 MB (raised from 5 MB with the user's approval when the L256 kernel goldens and the h128 and fast-path-off cases were vendored).
 
 ## Assumptions
 

@@ -8,9 +8,9 @@ feature before starting its dependents. Governing rules: `.specify/memory/consti
 | Spec | Former | Repo | Depends on |
 |---|---|---|---|
 | [001-workspace-config](001-workspace-config/spec.md) | P1 | raya | none |
-| [002-golden-fixtures](002-golden-fixtures/spec.md) | P2 | laya-sparse | none |
+| [002-golden-fixtures](002-golden-fixtures/spec.md) | P2 | laya-sparse (`laya:004`) | none |
 | [003-weights-loader](003-weights-loader/spec.md) | P3 | raya | 001, 002 |
-| [004-tokenizer-goldens](004-tokenizer-goldens/spec.md) | P4b | laya-sparse | 002 |
+| [004-tokenizer-goldens](004-tokenizer-goldens/spec.md) | P4b | laya-sparse (`laya:005`) | 002 |
 | [005-tokenizer-sequence-builder](005-tokenizer-sequence-builder/spec.md) | P4 | raya | 001, 002, 004 |
 | [006-reference-forward](006-reference-forward/spec.md) | P5 | raya | 002, 003, 005 |
 | [007-block-local-kernel](007-block-local-kernel/spec.md) | P6 | raya | 001 |
@@ -22,6 +22,10 @@ feature before starting its dependents. Governing rules: `.specify/memory/consti
                ├─> 004 tok goldens ─> 005 tokenizer ─┘         ^
 001 ───────────────────> 007 kernel ──────────────────────────┘
 ```
+
+Spec numbers collide between the two repos; cross-references use `raya:NNN` and `laya:NNN`. `raya:002` is
+implemented as `laya:004-golden-fixtures` and `raya:004` as `laya:005-tokenizer-goldens` (laya-sparse
+`cefb300`).
 
 001, 002 and 007 are independent. Specs 002 and 004 (and the compare command of 008) run in
 laya-sparse; their output is vendored into raya.
