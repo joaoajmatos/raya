@@ -765,6 +765,7 @@ dependencies = [
  "bytemuck",
  "raya-core",
  "safetensors",
+ "serde",
  "serde_json",
  "tempfile",
 ]

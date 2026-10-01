@@ -9,11 +9,12 @@ publish.workspace = true
 
 [dependencies]
 raya-core.workspace = true
+serde.workspace = true
+serde_json.workspace = true
 bytemuck.workspace = true
 safetensors.workspace = true
 
 [dev-dependencies]
-serde_json.workspace = true
 tempfile.workspace = true
 
 [lints]

@@ -51,19 +51,37 @@ fn info_prints_computed_numbers() {
         String::from_utf8_lossy(&out.stderr)
     );
     let text = String::from_utf8(out.stdout).unwrap();
-    for line in [
-        "hidden_size: 64",
-        "encoder_layers: 3",
-        "head_layers: 1",
-        "tensors: 44",
-        "parameters: 210822",
-        &format!("bytes: {}", 210_822 * 4),
-    ] {
-        assert!(
-            text.lines().any(|l| l == line),
-            "missing `{line}` in:\n{text}"
-        );
-    }
+    let lines: Vec<&str> = text.lines().collect();
+    // Line order is part of contracts/info-cli.md.
+    let keys: Vec<&str> = lines
+        .iter()
+        .map(|l| l.split(": ").next().unwrap())
+        .collect();
+    assert_eq!(
+        keys,
+        [
+            "checkpoint",
+            "hidden_size",
+            "encoder_layers",
+            "attention_heads",
+            "head_layers",
+            "tensors",
+            "parameters",
+            "bytes"
+        ]
+    );
+    assert_eq!(
+        lines[1..],
+        [
+            "hidden_size: 64",
+            "encoder_layers: 3",
+            "attention_heads: 2",
+            "head_layers: 1",
+            "tensors: 44",
+            "parameters: 210822",
+            &format!("bytes: {}", 210_822 * 4),
+        ]
+    );
 }
 
 #[test]

@@ -35,6 +35,8 @@ pub struct LoadReport {
     pub path: PathBuf,
     pub missing: Vec<String>,
     pub unused: Vec<String>,
+    /// Names that appear more than once in the file header.
+    pub duplicate: Vec<String>,
     pub shape: Vec<ShapeMismatch>,
     /// Set when the file could not be parsed at all.
     pub detail: Option<String>,
@@ -49,6 +51,7 @@ impl std::fmt::Display for LoadReport {
         for (title, names) in [
             ("missing tensors", &self.missing),
             ("unexpected tensors", &self.unused),
+            ("duplicate tensors", &self.duplicate),
         ] {
             if names.is_empty() {
                 continue;
@@ -97,6 +100,7 @@ mod tests {
             path: "m.safetensors".into(),
             missing: vec!["b".into(), "a".into()],
             unused: vec!["x".into()],
+            duplicate: vec!["d".into()],
             shape: vec![ShapeMismatch {
                 name: "w".into(),
                 expected: vec![2, 3],
@@ -107,7 +111,7 @@ mod tests {
         assert_eq!(
             Error::Weights(Box::new(report)).to_string(),
             "invalid weights file m.safetensors\n  missing tensors:\n    a\n    b\n  \
-             unexpected tensors:\n    x\n  shape mismatches:\n    w: expected [2, 3], found [3, 2]"
+             unexpected tensors:\n    x\n  duplicate tensors:\n    d\n  shape mismatches:\n    w: expected [2, 3], found [3, 2]"
         );
     }
 
@@ -117,6 +121,7 @@ mod tests {
             path: "m".into(),
             missing: vec![],
             unused: vec![],
+            duplicate: vec![],
             shape: vec![],
             detail: Some("bad header".into()),
         };

@@ -110,3 +110,52 @@ fn negative_cases() {
     let after: Vec<_> = fixtures.iter().map(|p| hash_file(p)).collect();
     assert_eq!(before, after, "vendored fixtures changed");
 }
+
+/// Appends a second `temperature` entry to the header of h64, keeping every offset valid.
+fn with_duplicate_temperature(dir: &Path) -> PathBuf {
+    let bytes = std::fs::read(common::h64_path()).unwrap();
+    let n = usize::try_from(u64::from_le_bytes(bytes[..8].try_into().unwrap())).unwrap();
+    let header: serde_json::Value = serde_json::from_slice(&bytes[8..8 + n]).unwrap();
+    let entry = header["temperature"].to_string();
+    let text = std::str::from_utf8(&bytes[8..8 + n]).unwrap().trim_end();
+    let mut new = format!("{},\"temperature\":{entry}}}", &text[..text.len() - 1]);
+    while new.len() % 8 != 0 {
+        new.push(' ');
+    }
+    let mut out = (new.len() as u64).to_le_bytes().to_vec();
+    out.extend_from_slice(new.as_bytes());
+    out.extend_from_slice(&bytes[8 + n..]);
+    let path = dir.join("dup.safetensors");
+    std::fs::write(&path, out).unwrap();
+    path
+}
+
+#[test]
+fn duplicate_key_is_reported() {
+    let tmp = tempfile::tempdir().unwrap();
+    let r = report(
+        load(&with_duplicate_temperature(tmp.path()), &cfg())
+            .err()
+            .expect("duplicate key must be an error"),
+    );
+    assert_eq!(r.duplicate, ["temperature"]);
+    assert!(r.missing.is_empty() && r.unused.is_empty() && r.shape.is_empty());
+    assert!(Error::Weights(Box::new(r)).to_string().contains(
+        "duplicate tensors:
+    temperature"
+    ));
+}
+
+/// `fixture-tiny/` has `vocab_size` 100; `weights-h64` was saved with 231. The loader must
+/// reject the pair, naming the embedding table, rather than load a mismatched model.
+#[test]
+fn fixture_tiny_config_does_not_match_h64_weights() {
+    let dir = common::data().join("fixture-tiny");
+    let config = ModelConfig::from_dir(&dir).unwrap();
+    assert_eq!(config.encoder.vocab_size, 100);
+    let r = report(load(&common::h64_path(), &config).err().unwrap());
+    assert_eq!(r.shape.len(), 1, "{r}");
+    assert_eq!(r.shape[0].name, "encoder.embeddings.tok_embeddings.weight");
+    assert_eq!(r.shape[0].expected, [100, 64]);
+    assert_eq!(r.shape[0].found, [231, 64]);
+}

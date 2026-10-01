@@ -53,6 +53,7 @@ pub fn load(path: &Path, config: &ModelConfig) -> Result<WeightStore> {
         path: path.to_path_buf(),
         missing: vec![],
         unused: vec![],
+        duplicate: vec![],
         shape: vec![],
         detail: None,
     };
@@ -79,6 +80,7 @@ pub fn load(path: &Path, config: &ModelConfig) -> Result<WeightStore> {
         )));
     }
 
+    report.duplicate = duplicate_keys(buf.as_bytes());
     let known: BTreeSet<&str> = entries.iter().map(|e| e.laya_name.as_str()).collect();
     report.unused = st
         .names()
@@ -112,7 +114,11 @@ pub fn load(path: &Path, config: &ModelConfig) -> Result<WeightStore> {
             (start..start + view.data().len(), entry.shape.clone()),
         );
     }
-    if !(report.missing.is_empty() && report.unused.is_empty() && report.shape.is_empty()) {
+    if !(report.missing.is_empty()
+        && report.unused.is_empty()
+        && report.duplicate.is_empty()
+        && report.shape.is_empty())
+    {
         return Err(Error::Weights(Box::new(report)));
     }
     if !misaligned.is_empty() {
@@ -132,4 +138,47 @@ pub fn load_dir(dir: &Path) -> Result<(ModelConfig, WeightStore)> {
     let config = ModelConfig::from_dir(dir)?;
     let store = load(&dir.join("model.safetensors"), &config)?;
     Ok((config, store))
+}
+
+/// Tensor names that occur more than once in the safetensors header (`serde_json` and the
+/// `safetensors` crate would silently keep the last one). Empty if the header is unreadable;
+/// `SafeTensors::deserialize` has already validated it by the time this runs.
+fn duplicate_keys(bytes: &[u8]) -> Vec<String> {
+    struct Keys(Vec<String>);
+    impl<'de> serde::de::Visitor<'de> for Keys {
+        type Value = Vec<String>;
+        fn expecting(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            f.write_str("a JSON object")
+        }
+        fn visit_map<A: serde::de::MapAccess<'de>>(
+            mut self,
+            mut map: A,
+        ) -> std::result::Result<Self::Value, A::Error> {
+            while let Some((key, _)) = map.next_entry::<String, serde::de::IgnoredAny>()? {
+                self.0.push(key);
+            }
+            Ok(self.0)
+        }
+    }
+    let Some(len) = bytes
+        .first_chunk::<8>()
+        .and_then(|n| usize::try_from(u64::from_le_bytes(*n)).ok())
+    else {
+        return vec![];
+    };
+    let Some(header) = bytes.get(8..).and_then(|b| b.get(..len)) else {
+        return vec![];
+    };
+    let mut de = serde_json::Deserializer::from_slice(header);
+    let Ok(keys) = serde::Deserializer::deserialize_map(&mut de, Keys(vec![])) else {
+        return vec![];
+    };
+    let mut seen = BTreeSet::new();
+    let mut dup = BTreeSet::new();
+    for key in keys {
+        if key != "__metadata__" && !seen.insert(key.clone()) {
+            dup.insert(key);
+        }
+    }
+    dup.into_iter().collect()
 }
