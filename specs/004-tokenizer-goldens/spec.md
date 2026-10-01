@@ -1,6 +1,6 @@
 # Feature Specification: Tokenizer Goldens from Laya
 
-**Feature Branch**: `raya/p4b-tokenizer-goldens` **in laya-sparse** (specification directory only; no speckit branch created)
+**Feature Branch**: `raya/p4b-tokenizer-goldens` **in laya-sparse** (specification directory only; implemented in laya-sparse as [laya:005-tokenizer-goldens](../../reference/laya-sparse/specs/005-tokenizer-goldens/spec.md), laya-sparse `cefb300`)
 
 **Created**: 2026-09-30
 
