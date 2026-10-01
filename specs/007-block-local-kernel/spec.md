@@ -4,7 +4,9 @@
 
 **Created**: 2026-09-30
 
-**Status**: Draft
+**Status**: Implemented
+
+**Verification**: local `cargo build`, `cargo fmt --check`, `cargo clippy -D warnings` (including `raya-kernels` with `--features avx2`) and `cargo test` (workspace) pass; CI is verified on GitHub only. The SC-004 speedup figures in `docs/kernel-notes.md` come from cloud-agent hardware (4 vCPU Xeon) and are indicative only, not i7-8700 results. US1 scenario 3 (PyTorch goldens) is not yet met: the goldens are not vendored, so `tests/goldens.rs` skips.
 
 **Origin**: Prompt P6 of the former `docs/agent-prompts.md`.
 
