@@ -19,6 +19,26 @@
 - `tests/data/inventory.json` (h64 fixture, 3 encoder layers, 1 decision-head layer) lists 44 keys, all `float32`, 210822 parameters. Its groups: `encoder.embeddings.{tok_embeddings,norm}`, `encoder.layers.N.{attn.Wqkv,attn.Wo,mlp.Wi,mlp.Wo,mlp_norm}`, `encoder.layers.N.attn_norm` for N >= 1 only (layer 0 has none), `encoder.final_norm`, `head.layers.N.*` (self-attention in/out projections, two linears, two norms with weight and bias), `type_emb`, `scorer.{0,1,3}`, `act_head.{0,2}`, `temperature`. There is no decoder or classifier tensor (embeddings are tied and unused).
 - Tensor widths scale with `hidden_size` (64 and 128 in the fixtures), so shapes must be derived from the config, not copied from the inventory.
 
+## Clarifications
+
+### Session 2026-10-01
+
+Resolved by the implementing agent with defaults (no user questions asked).
+
+- Q: Memory-map the file or read it once? → A: Read once into a single owned, 4-byte-aligned buffer; tensors are borrowed views of it. `memmap2` needs `unsafe`, which is reserved for `raya-kernels` (constitution, FR-008). Memory-mapping is deferred to a later feature that can place it in `raya-kernels` or amend the rule.
+- Q: What happens to bf16/fp16 tensors? → A: Rejected with `Error::Unimplemented` naming tensor and dtype. Constitution IV allows conversion on load but this feature stays strictly fp32; see Human-owned items.
+- Q: What does the loader take as input? → A: A weights file path plus an already-built `ModelConfig` (fixtures are flat and h128's config lives in `meta.json`), and a convenience `load_dir` for the `model.safetensors` + `rl_agent_config.json` + `encoder/config.json` layout used by `raya info`.
+- Q: How are tensors addressed? → A: By a typed key (parameter kind plus layer index), not free strings; the mapping table is the only place Laya string names appear.
+- Q: How are loader failures reported? → A: One new `Error` variant carrying all mismatches (missing, unused, shape, dtype, duplicate), so a caller sees every problem in one run; I/O and parse failures carry the path.
+- Q: Sharded checkpoints? → A: Out of scope; Laya writes a single `model.safetensors`.
+- Q: Pluggable GEMM packing hook? → A: Dropped; no consumer, SIMD target undecided.
+- Q: Config variants (e.g. zero head layers)? → A: The mapping follows `ModelConfig`/`ModelShape`; whatever `ModelShape::ensure_supported` rejects is rejected before any file is read.
+
+### Human-owned items (not decided here)
+
+- Whether bf16/fp16 checkpoints must load via fp32 conversion (precision scope beyond fp32; Constitution IV permits it, the brief for this feature excludes it).
+- Target CPU and any SIMD-oriented weight layout/packing (open; the packing hook is dropped until decided).
+
 ## User Scenarios & Testing *(mandatory)*
 
 The user is the Raya implementer (feature 006 consumes the store) and the researcher inspecting a checkpoint.
@@ -83,10 +103,10 @@ Any missing, unused, wrongly shaped or wrongly typed tensor aborts loading with 
 
 ### Functional Requirements
 
-- **FR-001**: Load a single `model.safetensors` for Raya-L; only fp32 tensors are accepted. Any other dtype returns `Error::Unimplemented`. Sharded checkpoints are out of scope (Laya writes one file).
-- **FR-002**: One key-mapping table in code from Laya `state_dict` names to Raya internal names, parameterized by the config (layer count, layer 0 without `attn_norm`, head layer count). It is the only place Laya names appear.
+- **FR-001**: Load a single `model.safetensors` (weights path plus a `ModelConfig`, and a directory convenience) for Raya-L; only fp32 tensors are accepted. Any other dtype returns `Error::Unimplemented`. Sharded checkpoints are out of scope (Laya writes one file).
+- **FR-002**: One key-mapping table in code from Laya `state_dict` names to Raya typed keys (parameter kind plus layer index), parameterized by the config (layer count, layer 0 without `attn_norm`, head layer count). It is the only place Laya names appear.
 - **FR-003**: Shape validation against the `raya-core` config with tensor-named errors; the expected shape of each tensor is derived from the config, not from the inventory.
-- **FR-004**: Errors use the shared `raya_core::Error`; the loader adds the variants it needs (missing, unused, shape, dtype report). Loading is all-or-nothing and reports every mismatch in one error.
+- **FR-004**: Errors use the shared `raya_core::Error`; one added variant carries the full report (missing, unused, shape, dtype, duplicate). Loading is all-or-nothing and reports every mismatch in one error.
 - **FR-005**: `WeightStore` exposes `&[f32]` plus shape by internal name, with no per-tensor copy. Memory is released when the store drops.
 - **FR-006**: `raya info <dir>` per User Story 3, reading the directory layout `model.safetensors` + `rl_agent_config.json` + `encoder/config.json`.
 - **FR-007**: No model math, no packing/repacking of weights, no tied or derived tensors synthesized. `reference/` and vendored fixtures are never modified; tests use temp copies.
@@ -109,7 +129,7 @@ Any missing, unused, wrongly shaped or wrongly typed tensor aborts loading with 
 ## Assumptions
 
 - Laya's decision-head parameters (`type_emb`, `scorer`, `act_head`, `temperature`) are part of the inventory and must be mapped.
-- Reading the file into memory once is acceptable. True memory-mapping needs `unsafe`, which the constitution reserves for `raya-kernels`, so it is deferred (see Clarifications after the clarify step).
+- Reading the file into memory once is acceptable. True memory-mapping needs `unsafe`, which the constitution reserves for `raya-kernels`, so it is deferred (see Clarifications).
 - The pluggable GEMM-packing hook from the earlier draft is dropped: no kernel consumes it yet and the SIMD target is an open human decision. Feature 006 or a kernel feature may add it.
 - bf16/fp16 conversion on load (allowed by constitution principle IV) is not part of this feature; adding it is a scope decision for the human.
 - The h128 config is taken from the vendored `tests/data/fastpath_off/meta.json` `encoder_config`/`agent_config`; no new fixture is needed.
