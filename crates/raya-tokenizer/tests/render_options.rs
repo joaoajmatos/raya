@@ -90,6 +90,8 @@ fn bad_questions_are_config_errors_naming_the_question() {
         r#"{"type":"choice","instructions":"i","criteria":[null]}"#,
         r#"{"type":"choice","instructions":"i","criteria":[["x"]]}"#,
         r#"{"type":"choice","instructions":"i","criteria":["a"],"labels":{"false":"a","true":"b"}}"#,
+        r#"{"type":"choice","instructions":"i","criteria":["a"],"labels":null}"#,
+        r#"{"type":"score","instructions":"i","criteria":["a"],"labels":null}"#,
         r#"{"type":"score","instructions":"i","criteria":{"a":"b"}}"#,
         r#"{"type":"score","instructions":"i","criteria":[]}"#,
         r#"{"type":"score","instructions":"i","criteria":["a",null]}"#,
@@ -136,5 +138,16 @@ fn malformed_question_json_is_a_config_error_naming_the_question() {
     assert!(
         raya_tokenizer::QuestionDef::from_json("q7", r#"{"type":"noul","instructions":"i"}"#)
             .is_ok()
+    );
+}
+
+#[test]
+fn null_labels_on_noul_mean_default_labels() {
+    assert_eq!(
+        options(r#"{"type":"noul","instructions":"i","labels":null}"#),
+        [
+            "false: no, the statement does not hold",
+            "true: yes, the statement holds"
+        ]
     );
 }

@@ -35,8 +35,16 @@ pub struct QuestionDef {
     pub instructions: JsonValue,
     #[serde(default)]
     pub criteria: Option<JsonValue>,
-    #[serde(default)]
+    /// A present `labels: null` stays `Some(Null)`: Laya rejects any `labels` key on a
+    /// non-noul question and treats a null on a noul question as the default labels.
+    #[serde(default, deserialize_with = "present")]
     pub labels: Option<JsonValue>,
+}
+
+fn present<'de, D: serde::Deserializer<'de>>(
+    d: D,
+) -> std::result::Result<Option<JsonValue>, D::Error> {
+    JsonValue::deserialize(d).map(Some)
 }
 
 impl QuestionDef {
@@ -136,7 +144,7 @@ fn noul_labels(id: &str, labels: Option<&JsonValue>) -> Result<(String, String)>
             "noul labels must map exactly 'false' and 'true' to distinct non-empty strings",
         )
     };
-    let Some(labels) = labels else {
+    let Some(labels) = labels.filter(|l| !matches!(l, JsonValue::Null)) else {
         return Ok(("false".to_owned(), "true".to_owned()));
     };
     let JsonValue::Object(pairs) = labels else {
