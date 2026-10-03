@@ -6,7 +6,7 @@
 ## QuestionDef / Question (`question.rs`)
 - `QuestionDef` (public form, `Deserialize`): `type: String`, `instructions: JsonValue`, `criteria: Option<JsonValue>`, `labels: Option<JsonValue>`.
 - `Question` (normalized): `qtype: QType {Choice=0, Score=1, Noul=2}`, `ins: String`, `crit: Crit`, `labels: Option<(String, String)>`; `Crit` is `Labels(Vec<JsonValue>)` (list-form choice), `Described(Vec<(String, JsonValue)>)` (dict-form choice), `Levels(Vec<JsonValue>)` (score), `Noul { false_: Option<JsonValue>, true_: Option<JsonValue> }`.
-- `Question::from_def(id, &QuestionDef) -> Result<Question>` (validation per the spec Clarifications) and `Question::options(&self) -> Result<Vec<String>>`.
+- `Question::from_def(id, &QuestionDef) -> Result<Question>` (validation per the spec Clarifications) and `Question::options(&self) -> Vec<String>` (label types are already checked by `from_def`).
 
 ## State (`builder.rs`)
 `State::Text(String) | State::Json(JsonValue)`; `truncate_left()` is true only for `Json(Array)`; `serialized() -> String`.

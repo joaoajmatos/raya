@@ -4,7 +4,7 @@
 
 **Created**: 2026-09-30 (draft); updated 2026-10-03 against `main` at `01de6c8`
 
-**Status**: Draft
+**Status**: Implemented
 
 **Origin**: Prompt P4 of the former `docs/agent-prompts.md`.
 
