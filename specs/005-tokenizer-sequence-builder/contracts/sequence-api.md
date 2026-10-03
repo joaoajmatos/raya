@@ -19,5 +19,6 @@ Behavior:
 - `encode_state` mirrors `Agent._encode_state`: tokenize the serialized state once (`[MASK]` replaced by a space), `truncate_left` for array states, one `Item` per question in the given order, error if any item lost option markers.
 - `build_sequence` mirrors `build_sequence(..., return_stats=True)` and does not run the guard.
 - Errors: `Error::Config { field, reason }` (bad question: field `questions.<id>.<key>`; tokenizer file or special token problems name the path or token; lost markers: field `head_max_len`), `Error::Unimplemented` (list label that is not string, integer or bool). `tokenizers` returns opaque errors, so tokenizer read and encode failures are reported as `Config` naming the path; no new `Error` variant is added.
+- `collate`'s `min_len` is a test-only extension (Laya's `collate_items` has no minimum length); pass 0 for Laya's behavior. raya:006 decides how real inference pads.
 - Not ported: `option_order`, `target`/`label`/`meta` collation fields, Laya's full question validation.
 - The `pub use tokenizers::Tokenizer` re-export stays.

@@ -15,9 +15,12 @@ pub struct Batch {
     pub qtype: Vec<u8>,
 }
 
-/// Flattens the groups in order and pads to the longest item. `min_len` raises the padded
-/// length (the forward goldens pad further than the batch needs); pass 0 for Laya's behavior.
-/// No items gives `None`, as in Laya.
+/// Flattens the groups in order and pads to the longest item. No items gives `None`, as in
+/// Laya.
+///
+/// `min_len` is NOT part of Laya's `collate_items`: it exists only so tests can reproduce the
+/// forward goldens, which pad beyond the batch maximum. Pass 0 for Laya's behavior; raya:006
+/// decides how real inference pads.
 #[must_use]
 pub fn collate(groups: &[Vec<Item>], pad_id: u32, min_len: usize) -> Option<Batch> {
     let items: Vec<&Item> = groups.iter().flatten().collect();
