@@ -151,3 +151,34 @@ fn null_labels_on_noul_mean_default_labels() {
         ]
     );
 }
+
+/// Laya keys list labels by Python equality: `True == 1`, `False == 0`, `1 == 1.0`.
+#[test]
+fn cross_type_duplicate_labels_collapse_like_python() {
+    for labels in [
+        "[true,1]",
+        "[1,true]",
+        "[false,0]",
+        "[0,false]",
+        "[1,1]",
+        "[\"a\",\"a\"]",
+    ] {
+        let json = format!(r#"{{"type":"choice","instructions":"i","criteria":{labels}}}"#);
+        match err(&json) {
+            Error::Config { reason, .. } => {
+                assert!(reason.contains("repeats"), "{labels}: {reason}");
+            }
+            other => panic!("{labels}: {other}"),
+        }
+    }
+    // Laya rejects [1, 1.0] as a duplicate; Raya rejects every float label as unsupported.
+    assert!(matches!(
+        err(r#"{"type":"choice","instructions":"i","criteria":[1,1.0]}"#),
+        Error::Unimplemented(_)
+    ));
+    // Distinct values of different types are fine.
+    assert_eq!(
+        options(r#"{"type":"choice","instructions":"i","criteria":["1",1,2,false]}"#),
+        ["1", "1", "2", "False"].map(String::from)
+    );
+}

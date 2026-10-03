@@ -1,3 +1,6 @@
+//! Expected strings were checked against `CPython` 3.11 `json.dumps(json.loads(x),
+//! ensure_ascii=False)` on 2026-10-03: every number case, key order, duplicate keys and both
+//! escape cases below match. Re-run that check if a case is added.
 mod common;
 
 use raya_tokenizer::JsonValue;
