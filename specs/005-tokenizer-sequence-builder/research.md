@@ -18,7 +18,7 @@
 ## R4. Question normalization and option rendering
 - `_to_internal`: choice with list criteria becomes an ordered label list with no descriptions; noul dict keys are lowercased; non-string `instructions` become `json.dumps(ensure_ascii=False)` text.
 - `render_options` per type: choice `label` or `label: <desc>` (`str(label)`; description `None`/`""` means none; a non-string description goes through `render_criterion`: compact JSON with `", "`/`": "` separators); score `level i: <desc>`; noul `false_label: ...`, `true_label: ...` with default descriptions "no, the statement does not hold" / "yes, the statement holds" when absent or empty, labels default `false`/`true`, `.strip()`ped.
-- **Label types**: string, integer and bool for list-form choice labels (`str()` gives `True`/`False`); floats and others give `Error::Unimplemented`. Dict-form labels are JSON keys, i.e. strings. List-form exact duplicates (equal strings, equal ints, equal bools) give `Error::Config`; cross-type equality (`1` vs `true`) is out of scope.
+- **Label types**: string, integer and bool for list-form choice labels (`str()` gives `True`/`False`); floats and others give `Error::Unimplemented`. Dict-form labels are JSON keys, i.e. strings. List-form duplicates give `Error::Config` under Python equality for the supported types (equal strings; `true`/`1` and `false`/`0` and equal integers collide); floats are rejected earlier, so `1.0` never reaches the comparison.
 - **Validation**: type, criteria shape, `labels` only on noul with the two distinct non-empty strings (spec Clarifications).
 
 ## R5. Verification gap: golden key order

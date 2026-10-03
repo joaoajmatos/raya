@@ -85,6 +85,8 @@ fn bad_questions_are_config_errors_naming_the_question() {
         r#"{"type":"choice","instructions":"i","criteria":[]}"#,
         r#"{"type":"choice","instructions":"i","criteria":{}}"#,
         r#"{"type":"choice","instructions":"i","criteria":["a","a"]}"#,
+        r#"{"type":"choice","instructions":"i","criteria":[true,1]}"#,
+        r#"{"type":"choice","instructions":"i","criteria":[0,false]}"#,
         r#"{"type":"choice","instructions":"i","criteria":[null]}"#,
         r#"{"type":"choice","instructions":"i","criteria":[["x"]]}"#,
         r#"{"type":"choice","instructions":"i","criteria":["a"],"labels":{"false":"a","true":"b"}}"#,
@@ -113,4 +115,26 @@ fn float_labels_are_unimplemented() {
         err(r#"{"type":"choice","instructions":"i","criteria":[1.5]}"#),
         Error::Unimplemented(_)
     ));
+}
+
+#[test]
+fn malformed_question_json_is_a_config_error_naming_the_question() {
+    for json in [
+        r#"{"instructions":"i"}"#,
+        r#"{"type":"choice"}"#,
+        r#"{"type":7,"instructions":"i"}"#,
+        "not json",
+    ] {
+        match raya_tokenizer::QuestionDef::from_json("q7", json) {
+            Err(Error::Config { field, reason }) => {
+                assert_eq!(field, "questions.q7", "{json}");
+                assert!(!reason.is_empty());
+            }
+            other => panic!("{json}: {other:?}"),
+        }
+    }
+    assert!(
+        raya_tokenizer::QuestionDef::from_json("q7", r#"{"type":"noul","instructions":"i"}"#)
+            .is_ok()
+    );
 }

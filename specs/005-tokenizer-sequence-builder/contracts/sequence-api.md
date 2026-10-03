@@ -9,6 +9,7 @@ SequenceBuilder::build_sequence(&self, state_ids: &[u32], truncate_left: bool, q
 SequenceBuilder::encode_state(&self, state: &State, questions: &[(String, QuestionDef)],
                               max_len: usize, head_max_len: usize) -> Result<Vec<Item>>
 collate(groups: &[Vec<Item>], pad_id: u32, min_len: usize) -> Option<Batch>
+QuestionDef::from_json(id: &str, text: &str) -> Result<QuestionDef>   // serde errors become Config naming the question
 Question::from_def(id: &str, def: &QuestionDef) -> Result<Question>
 Question::options(&self) -> Vec<String>
 State, JsonValue, QuestionDef, Question, Item, Stats, Trace, Batch, QType

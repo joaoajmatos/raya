@@ -39,6 +39,14 @@ pub struct QuestionDef {
     pub labels: Option<JsonValue>,
 }
 
+impl QuestionDef {
+    /// Parses one question from JSON text; a missing or ill-typed field is an `Error::Config`
+    /// naming the question instead of a bare serde error at the caller.
+    pub fn from_json(id: &str, text: &str) -> Result<Self> {
+        serde_json::from_str(text).map_err(|e| bad(id, "", e.to_string()))
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 enum Crit {
     /// Choice given as a list of labels: no descriptions.
@@ -63,7 +71,11 @@ pub struct Question {
 
 fn bad(id: &str, key: &str, reason: impl Into<String>) -> Error {
     Error::Config {
-        field: format!("questions.{id}.{key}"),
+        field: if key.is_empty() {
+            format!("questions.{id}")
+        } else {
+            format!("questions.{id}.{key}")
+        },
         reason: reason.into(),
     }
 }
@@ -102,13 +114,17 @@ fn label_text(id: &str, i: usize, v: &JsonValue) -> Result<String> {
     }
 }
 
+/// Python dict-key equality for the supported label types: `True == 1` and `False == 0`.
 fn same_label(a: &JsonValue, b: &JsonValue) -> bool {
+    let number = |v: &JsonValue| match v {
+        JsonValue::Bool(x) => Some(i128::from(*x)),
+        JsonValue::Int(x) => Some(i128::from(*x)),
+        JsonValue::UInt(x) => Some(i128::from(*x)),
+        _ => None,
+    };
     match (a, b) {
         (JsonValue::Str(x), JsonValue::Str(y)) => x == y,
-        (JsonValue::Bool(x), JsonValue::Bool(y)) => x == y,
-        (JsonValue::Int(x), JsonValue::Int(y)) => x == y,
-        (JsonValue::UInt(x), JsonValue::UInt(y)) => x == y,
-        _ => false,
+        _ => number(a).is_some() && number(a) == number(b),
     }
 }
 
