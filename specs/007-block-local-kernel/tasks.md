@@ -83,7 +83,7 @@
 - [X] T032 `crates/raya-kernels/src/simd/mod.rs`: compile the AVX2 module on every x86_64 build (no cargo feature), `Backend::detect()` via `is_x86_feature_detected!("avx2")` and `"fma"` with the portable fallback, testable `select` rule, `Backend::from_name`; `dot_tile`/`axpy_rows` re-check the CPU before the `unsafe` call (sound for a caller-named `Backend::Avx2`); NEON unchanged
 - [X] T033 `Cargo.toml`: keep `avx2 = []` as a documented no-op; `src/meta.rs`: record the selected `backend` in the bench metadata; `benches/local_attention.rs`: `RAYA_BACKEND` override
 - [X] T034 Tests: `tests/dispatch.rs` (default picks the best backend for this CPU, every available backend matches the oracle on several shapes and head dims), `tests/simd_kernels.rs` (micro-kernels vs portable for head dims 8..136, unavailable backend gives the portable result), unit tests in `simd/mod.rs`
-- [X] T035 Update spec 007, plan, README, AGENTS.md, `docs/kernel-notes.md`; run build, fmt, clippy `-D warnings`, test (VS env, `CC=cl`); CI stays green on macos-14 (portable)
+- [X] T035 Update spec 007, plan, README, `docs/kernel-notes.md`; run build, fmt, clippy `-D warnings`, test (VS env, `CC=cl`); CI stays green on macos-14 (portable)
 
 ## Dependencies and order
 

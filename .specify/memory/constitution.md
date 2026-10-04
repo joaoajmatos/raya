@@ -103,10 +103,12 @@ MINOR for new or materially expanded principles, PATCH for clarifications.
   builds, selected by runtime detection with the portable fallback; NEON stays an optional feature and
   macos-14 arm64 stays on the portable path). Rationale: on the target machine (i7-8700) the AVX2
   micro-kernels are the faster path, and gating them behind a cargo flag meant default builds, and anyone
-  who forgot the flag, ran the slower one. Evidence, as reported by the human and not re-measured in the
-  amending change (laya/raya sweep, i7-8700, 8192 tokens, one thread, 16.7% background load): speedups of
-  4.56x (Block3) and 4.46x (Window64) with AVX2 versus 3.03x and 2.79x for the portable path (baseline and
-  run id as recorded in that sweep). Unchanged by this amendment: no `target-cpu` or `target-feature` build
+  who forgot the flag, ran the slower one. Evidence (a hypothesis until sourced, per principle III): speedup
+  figures reported by the human from a laya/raya sweep on the i7-8700, 8192 tokens, one thread, 16.7%
+  background load: 4.56x (Block3) and 4.46x (Window64) with AVX2 versus 3.03x and 2.79x for the portable
+  path. They were not measured or reproduced in this repository, and the source repo, commit, run id, baseline,
+  rustc version and feature flags were not provided with the approval; the human is to record them here.
+  The amendment rests on the human's decision, not on these figures. Unchanged by this amendment: no `target-cpu` or `target-feature` build
   flags, portable always present and the fallback, `unsafe` only in `raya-kernels`, target CPU and precision
   still an open human decision (`docs/feasibility.md` scope is unchanged, so it is not edited). Affects:
   principle V; spec 007 FR-003 and its clarification on CPU feature baseline; README scope line.

@@ -12,6 +12,7 @@ pub struct BenchMetadata {
     pub logical_cpus: usize,
     pub physical_cpus: usize,
     pub threads: usize,
+    /// What is compiled in (cargo features and, on `x86_64`, `avx2`), not what ran: see `backend`.
     pub features: Vec<String>,
     /// The micro-kernel backend the run used (`portable`, `avx2` or `neon`).
     pub backend: String,
