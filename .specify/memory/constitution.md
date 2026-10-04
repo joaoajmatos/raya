@@ -35,12 +35,16 @@ inference. Compression, architecture variants, training, and int8/fp16/bf16 path
 Low-precision weights MAY be converted to fp32 on load. `docs/feasibility.md` is the source of truth for
 scope; a change of scope is a constitution or feasibility amendment first, a feature second.
 
-### V. Portable First, SIMD Optional
+### V. Portable First, Runtime-Detected SIMD
 
-The target CPU and precision are an open decision. The project MUST NOT choose a SIMD target: a portable
-path MUST always exist and be the default, and AVX2, NEON or other micro-kernels MUST be optional cargo
-features with runtime dispatch and a portable fallback. `unsafe` is permitted only in `raya-kernels`;
-every other crate MUST forbid it. The project MUST build and pass tests on Linux x86_64 and macOS arm64,
+The target CPU and precision are an open decision. The project MUST NOT choose a SIMD target: no
+`target-cpu` or `target-feature` build flags, and a portable path MUST always exist and MUST be used
+whenever runtime detection fails or the CPU lacks a feature. On x86_64, AVX2 micro-kernels are compiled
+into default builds and selected at construction by runtime feature detection (AVX2 and FMA); NEON and
+any other micro-kernels MUST be optional cargo features with runtime dispatch and a portable fallback.
+Callers MUST be able to request the portable backend explicitly, and the backend actually selected MUST
+be recorded with benchmark results. `unsafe` is permitted only in `raya-kernels`; every other crate MUST
+forbid it. The project MUST build and pass tests on Linux x86_64 and macOS arm64,
 and Windows builds MUST be supported for the researcher's measurement machine.
 
 ### VI. Correctness Before Speed, Reference Before Kernel
@@ -92,4 +96,30 @@ Amendments state their rationale and affected principles, update `docs/feasibili
 changes, preserve the ratification date, and bump the version: MAJOR for incompatible governance changes,
 MINOR for new or materially expanded principles, PATCH for clarifications.
 
-**Version**: 1.0.0 | **Ratified**: 2026-09-30 | **Last Amended**: 2026-09-30
+## Amendments
+
+- **1.1.0 (2026-10-04), MINOR**: Principle V, "Portable First, SIMD Optional" becomes "Portable First,
+  Runtime-Detected SIMD". Approved by the human on 2026-10-04 (decision: compile AVX2 into default x86_64
+  builds, selected by runtime detection with the portable fallback; NEON stays an optional feature and
+  macos-14 arm64 stays on the portable path). Rationale: on the target machine (i7-8700) the AVX2
+  micro-kernels are the faster path, and gating them behind a cargo flag meant default builds, and anyone
+  who forgot the flag, ran the slower one. Evidence (source, per principle III and the workspace
+  rule on cross-repo numbers): repo `raya`, `results/kernel-bench/` (git-ignored, local to the measuring
+  machine). Portable run `unix-1790892082.json` (run id `unix:1790892082`, built at commit `99687aa`,
+  sha256 prefix `8da32d6ee750c69a`) and AVX2 run `unix-1790892258.json` (run id `unix:1790892258`, built at
+  commit `0d91321`, sha256 prefix `94195428d08a9171`); `git diff 99687aa 0d91321 -- crates/raya-kernels` is
+  empty, so the kernel sources are the same. Hardware: Intel64 Family 6 Model 158 Stepping 10 (the
+  i7-8700, 6 physical and 12 logical cores), rustc 1.94.1, no RUSTFLAGS, cargo features `portable` and
+  `portable,avx2`. At 8192 tokens and one thread the tiled kernel's speedup over the in-crate naive oracle
+  is 4.56x (Block3) and 4.46x (Window64) with AVX2 versus 3.03x and 2.79x portable; directly, tiled AVX2
+  (607.9 and 193.9 ms) is 1.41x and 1.69x faster than tiled portable (860.2 and 328.1 ms). Caveats: single
+  runs; the baseline is the naive oracle, not Laya; the 16.7% background load is the human's statement and
+  is not recorded in the JSON files; the `label` field of these files reads "target machine" but the human
+  reports that the `RAYA_TARGET_MACHINE` label in these result files is unreliable, so machine identity
+  rests on the CPU model string and the human's statement. The amendment rests on the human's decision,
+  not only on these figures. Unchanged by this amendment: no `target-cpu` or `target-feature` build
+  flags, portable always present and the fallback, `unsafe` only in `raya-kernels`, target CPU and precision
+  still an open human decision (`docs/feasibility.md` scope is unchanged, so it is not edited). Affects:
+  principle V; spec 007 FR-003 and its clarification on CPU feature baseline; README scope line.
+
+**Version**: 1.1.0 | **Ratified**: 2026-09-30 | **Last Amended**: 2026-10-04

@@ -77,6 +77,14 @@
 - [X] T027 [P] Update `README.md` (kernel spike status, how to run the bench, pointer to `docs/kernel-notes.md`) and `specs/README.md` status for 007; verify `raya-kernels` is the only crate without `forbid(unsafe_code)` (`crates/raya-core/tests/forbid_unsafe.rs` still passes) and that no dependency beyond spec 001 FR-007 (as amended) appears in any `Cargo.toml`
 - [X] T028 Walk `quickstart.md` end to end and fix any command that does not work; confirm SC-001 to SC-004 each have evidence (test, JSON, notes)
 
+## Phase 7: Follow-up - runtime-detected AVX2 by default (amendment 2026-10-04)
+
+- [X] T031 Amend `.specify/memory/constitution.md` principle V to 1.1.0 as its own commit (human-approved; i7-8700 evidence cited)
+- [X] T032 `crates/raya-kernels/src/simd/mod.rs`: compile the AVX2 module on every x86_64 build (no cargo feature), `Backend::detect()` via `is_x86_feature_detected!("avx2")` and `"fma"` with the portable fallback, testable `select` rule, `Backend::from_name`; `dot_tile`/`axpy_rows` re-check the CPU before the `unsafe` call (sound for a caller-named `Backend::Avx2`); NEON unchanged
+- [X] T033 `Cargo.toml`: keep `avx2 = []` as a documented no-op; `src/meta.rs`: record the selected `backend` in the bench metadata; `benches/local_attention.rs`: `RAYA_BACKEND` override
+- [X] T034 Tests: `tests/dispatch.rs` (default picks the best backend for this CPU, every available backend matches the oracle on several shapes and head dims), `tests/simd_kernels.rs` (micro-kernels vs portable for head dims 8..136, unavailable backend gives the portable result), unit tests in `simd/mod.rs`
+- [X] T035 Update spec 007, plan, README, `docs/kernel-notes.md`; run build, fmt, clippy `-D warnings`, test (VS env, `CC=cl`); CI stays green on macos-14 (portable)
+
 ## Dependencies and order
 
 - Phase 1 then Phase 2 (T005 to T008) block everything; the oracle is tested (T008) before the tiled kernel exists.

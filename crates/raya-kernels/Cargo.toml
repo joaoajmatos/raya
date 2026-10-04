@@ -9,6 +9,8 @@ publish.workspace = true
 build = "build.rs"
 
 [features]
+# No-op, kept so existing `--features avx2` commands work: the AVX2 kernels are compiled into every
+# x86_64 build and chosen at run time by CPU detection (constitution V, amended 1.1.0).
 avx2 = []
 neon = []
 stage-timing = []

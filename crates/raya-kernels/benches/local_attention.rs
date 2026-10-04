@@ -53,6 +53,22 @@ fn estimate(dir: &Path, func: &str, seq: usize) -> Option<(f64, f64)> {
     ))
 }
 
+/// `RAYA_BACKEND=portable|avx2|neon` forces a backend (falling back to portable, with a note, if
+/// the CPU cannot run it); otherwise the detected one is used. The choice is recorded in the
+/// metadata and in every entry.
+fn bench_backend() -> Backend {
+    let Ok(name) = std::env::var("RAYA_BACKEND") else {
+        return Backend::detect();
+    };
+    let requested = Backend::from_name(&name)
+        .unwrap_or_else(|| panic!("RAYA_BACKEND `{name}` is not portable, avx2 or neon"));
+    let used = requested.or_fallback();
+    if used != requested {
+        eprintln!("RAYA_BACKEND={name} is not available on this CPU; using portable");
+    }
+    used
+}
+
 fn main() {
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
     let criterion_dir = root.join("target/criterion");
@@ -60,7 +76,7 @@ fn main() {
         .output_directory(&criterion_dir)
         .configure_from_args();
     let default_t = default_threads();
-    let backend = Backend::detect();
+    let backend = bench_backend();
     let mut entries: Vec<Entry> = Vec::new();
 
     let mut group = c.benchmark_group("local_attention");
@@ -146,7 +162,8 @@ fn main() {
         eprintln!("no Criterion estimates found (filtered run?); not writing JSON");
         return;
     }
-    let meta = BenchMetadata::collect(default_t);
+    let mut meta = BenchMetadata::collect(default_t);
+    meta.backend = backend.name().to_string();
     let doc = json!({"label": meta.label, "metadata": meta, "results": results});
     let dir = root.join("results/kernel-bench");
     std::fs::create_dir_all(&dir).expect("create results dir");

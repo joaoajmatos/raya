@@ -14,7 +14,7 @@ math yet; the `raya` subcommands are stubs.
 
 - Raya-L only: Laya's exact shape, fp32, CPU inference, loading Laya's safetensors.
 - No compression, architecture variants, training, or int8/fp16/bf16 paths.
-- No SIMD target is chosen: the portable path is the default and AVX2/NEON stay optional.
+- No SIMD target is chosen: no `target-cpu` build flags; AVX2 kernels are runtime-detected on x86_64 (portable is the fallback and can be requested explicitly), NEON stays an optional feature.
 - Laya (`reference/laya-sparse/`, a read-only git submodule) is the specification: match it, do not improve it.
 
 ## Layout

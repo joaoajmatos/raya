@@ -22,10 +22,19 @@
 - Q: `local.py` (the 85 ms kernel) and `reference.py` define `block_local` as the 3-block span (`|blk_i - blk_j| <= 1`, block 128), not +/-64. Which semantics? → A: Both, selected by a `Mask` parameter: `Block3` (Laya's `block_local`, the only one comparable with the 85 ms kernel) and `Window64` (exact `|i-j| <= 64`, the real model's local window). The oracle and tiled kernel implement both, the benchmarks report both, and SC-004 applies to each mask separately.
 - Q: How does the kernel handle a padded tail? → A: The `AttentionKernel` trait takes a per-sequence valid length; keys at or beyond it are masked, and rows with no valid keys output zeros (never NaN).
 - Q: What outcome counts as a win for the spike? → A: Relative bar: tiled at least 3x faster than this naive oracle at 8192 tokens, single-threaded, same machine; the 85 ms comparison is deferred to feature 008 on the target CPU.
-- Q: What CPU feature baseline does the default portable SIMD build assume? → A: Baseline target features only (no `target-cpu` flags); faster paths come only from the optional `avx2`/`neon` features with runtime dispatch. Bench metadata records the RUSTFLAGS used.
+- Q: What CPU feature baseline does the default portable SIMD build assume? → A: Baseline target features only (no `target-cpu` flags); faster paths come only from runtime-dispatched micro-kernels: `avx2` (compiled into x86_64 builds since the 2026-10-04 amendment, see below) and the optional `neon` feature. Bench metadata records the RUSTFLAGS used.
 - Q: How is the portable SIMD default implemented on the pinned stable toolchain? → A: With the `wide` crate, added to `raya-kernels` only; spec 001 FR-007 is amended to allow it (`std::simd` is nightly-only).
 - Q: What must the naive oracle look like so the 3x bar is meaningful? → A: A single-threaded scalar `f32` per-score loop over only the keys the mask allows (no tiling, no explicit SIMD, sensible memory access); it is both the correctness oracle and the speed baseline for SC-004.
 - Q: What is the default thread count for the tiled kernel and benchmarks? → A: Physical core count (via `num_cpus`), overridable via `RAYA_THREADS`; benchmarks run at 1 thread (for SC-004) and at the default, and record the thread count in the JSON.
+
+### Amendment 2026-10-04: runtime-detected AVX2 by default (constitution 1.1.0)
+
+Approved by the human together with the constitution V amendment (see `.specify/memory/constitution.md`, Amendments).
+
+- Q: What changes? → A: The AVX2 micro-kernels are no longer behind the `avx2` cargo feature on x86_64. `Backend::detect()` returns `Avx2` when `is_x86_feature_detected!` reports AVX2 and FMA, otherwise `Portable`; `Tiled::default()` uses it. The `avx2` feature remains as an empty alias so existing commands keep working. NEON is unchanged (optional feature, aarch64 only); macos-14 builds and tests the portable path.
+- Q: Is the dispatch sound for callers that name a backend? → A: Yes. `dot_tile` and `axpy_rows` re-check the CPU before entering an `unsafe` kernel and use the portable kernel otherwise, so `Backend::Avx2` can no longer reach AVX2 instructions on a CPU without them (previously the safety relied on callers using `detect`/`or_fallback`).
+- Q: Can a run still use the portable path? → A: Yes: `TiledConfig { backend: Backend::Portable, .. }`, and `RAYA_BACKEND=portable|avx2|neon` in the bench. The backend used is recorded in the bench metadata (`backend`) and per entry.
+- Q: Tests? → A: Every available backend is compared with the naive oracle (`dispatch`), the micro-kernels are compared with the portable kernels across head dimensions 8 to 136 and tile shapes (`simd_kernels`), naming an unavailable backend is checked to give the portable result, and the selection rule is unit-tested for every probe combination.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -66,7 +75,7 @@ One-layer Criterion benchmarks at 2048, 4096 and 8192 tokens, with a per-stage b
 
 ### User Story 3 - Optional SIMD and Honest Notes (Priority: P3)
 
-Portable SIMD is used by default; `avx2` and `neon` micro-kernels are optional cargo features with runtime dispatch and a portable fallback. `docs/kernel-notes.md` records design, what was tried and what was slower than expected.
+Portable SIMD is the fallback; on x86_64 the `avx2` micro-kernels are chosen at run time when the CPU reports AVX2 and FMA, and `neon` is an optional cargo feature with runtime dispatch (amended 2026-10-04). `docs/kernel-notes.md` records design, what was tried and what was slower than expected.
 
 **Why this priority**: SIMD target is an open decision; the notes carry the learning even if the kernel loses.
 
@@ -85,7 +94,7 @@ Portable SIMD is used by default; `avx2` and `neon` micro-kernels are optional c
 
 - **FR-001**: `AttentionKernel` trait in `raya-kernels` (shared with feature 006; define it here if 006 has not merged). It takes a per-sequence valid length: keys at or beyond it are masked, and a row with no valid keys outputs zeros.
 - **FR-002**: Both implementations take a `Mask` (`Block3` or `Window64`, as defined in User Story 1) and compute it exactly. `Block3` follows `reference/laya-sparse/experiments/kernels/reference.py` (`block_local`, scale `1/sqrt(head_dim)`, keys `j >= valid_len` masked, rows with no allowed key output zeros). Implementations: `naive` oracle (single-threaded scalar `f32`, per-score loop over only the keys the mask allows, no tiling or explicit SIMD; also the speed baseline for SC-004); `tiled` FlashAttention-style (Q tile, K/V tiles, micro-tiled dot-product kernels, online softmax, never a full score matrix), multithreaded across (head, block).
-- **FR-003**: Portable SIMD via the `wide` crate by default (`raya-kernels` only; `std::simd` is nightly-only and excluded; spec 001 FR-007 amended to allow `wide`); `avx2` and `neon` optional features; neither is the default. The default build uses baseline target features only (no `-C target-cpu` flags); the bench metadata records the RUSTFLAGS in effect.
+- **FR-003**: Portable SIMD via the `wide` crate by default (`raya-kernels` only; `std::simd` is nightly-only and excluded; spec 001 FR-007 amended to allow `wide`); the `avx2` micro-kernels are compiled into every x86_64 build and selected by runtime detection (the `avx2` cargo feature is kept as a no-op); `neon` stays an optional feature. The default build uses baseline target features only (no `-C target-cpu` flags); the bench metadata records the RUSTFLAGS in effect.
 - **FR-004**: Supports sequences up to 8192, 16 heads, head dim 64, block 128.
 - **FR-005**: Criterion benches per User Story 2, with metadata JSON.
 - **FR-006**: `unsafe` allowed here only (constitution V).
