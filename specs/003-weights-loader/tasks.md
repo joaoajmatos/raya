@@ -83,10 +83,20 @@ After T003: T004, T006 and T007 in parallel; after T005 and T010: T012 (store.rs
 2. Add loud failure (US2) before any other crate depends on the store: feature 006 must never see a partially valid store.
 3. `raya info` last; it is a thin consumer.
 
+## Phase 7: Follow-up - widen half precision on load (amendment 2026-10-04)
+
+- [X] T019 `crates/raya-weights/src/convert.rs`: `bf16_to_f32` and `f16_to_f32` (exact; subnormals, signed zero, infinities, NaN payloads) with in-file unit tests exhaustive over all 65536 fp16 patterns against an f64 computation from the format definition, all bf16 patterns, and special values
+- [X] T020 `crates/raya-weights/src/store.rs` and `buffer.rs`: accept F32, F16 and BF16 (anything else returns `Error::Unimplemented` naming every tensor and dtype); all-F32 files keep the zero-copy path; files with any F16/BF16 tensor are widened into one new fp32 buffer and the file buffer is dropped; `WeightStore::source_dtypes()`; missing/unused/duplicate/shape reporting unchanged
+- [X] T021 [P] `crates/raya-weights/tests/common/half.rs` and `tests/load_half.rs`: independent narrowing (round to nearest even) and reference widening; bf16, fp16 and mixed copies of h64 generated in a temp dir load bit-exactly to the widened originals (44 tensors, 210822 parameters, `total_bytes` = 4 x parameters); rounding-error bounds; unsupported dtypes (F64, I32) named; half-precision files still get the full mismatch report; all-F32 file reports `["F32"]`. Never write under `tests/data/`
+- [X] T022 `crates/raya-weights/tests/load_negative.rs`: the former bf16 `Unimplemented` case now uses F64
+- [X] T023 `crates/raya-cli/src/info.rs`, `tests/info.rs`, `tests/info_half.rs`: `source_dtype` line (last), `bytes` is the resident fp32 size; a bf16 checkpoint generated in a temp dir prints `source_dtype: BF16`
+- [X] T024 Update spec, plan, research R9, contracts, quickstart for the amendment; Status stays Implemented
+- [X] T025 Run `cargo build --workspace`, `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo test --workspace` (VS env, `CC=cl`); `git diff --stat main -- tests/data reference` empty
+
 ## Notes
 
 - Risk: the R4 shape table is verified by a throwaway script only; T008 is the real gate, and h128 is the only test of the `d + 4` rule at a second width.
 - Risk: `ModelShape::ensure_supported` may not reject bias-enabled configs; T005 covers that case explicitly.
 - Risk: `bytemuck` alignment assumption rests on safetensors' 8-byte header padding; T010 checks alignment per tensor instead of assuming it.
 - Risk: adding a variant to `raya_core::Error` is a public-API change for the other crates; no `match` on `Error` exists outside `raya-core` today (verify at T003).
-- Human-owned, not decided: bf16/fp16 conversion on load, target CPU and any weight packing.
+- Human-owned, not decided: target CPU and any weight packing. (bf16/fp16 widening on load was decided 2026-10-04, Phase 7.)

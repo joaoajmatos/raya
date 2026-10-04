@@ -5,6 +5,7 @@
 compile_error!("raya-weights assumes little-endian");
 
 mod buffer;
+mod convert;
 mod key;
 mod mapping;
 mod store;

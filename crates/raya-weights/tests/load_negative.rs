@@ -69,13 +69,13 @@ fn negative_cases() {
     assert_eq!(r.shape[0].expected, [3, 64]);
     assert_eq!(r.shape[0].found, [64, 3]);
 
-    // bf16 tensor
+    // unsupported dtype (bf16 and fp16 are widened instead; see load_half.rs)
     let p = common::mutated_h64(tmp.path(), |t| {
-        *t.get_mut("temperature").unwrap() = (Dtype::BF16, vec![3], vec![0; 6]);
+        *t.get_mut("temperature").unwrap() = (Dtype::F64, vec![3], vec![0; 24]);
     });
     match load(&p, &cfg()).err().unwrap() {
         Error::Unimplemented(m) => {
-            assert!(m.contains("temperature") && m.contains("BF16"), "{m}");
+            assert!(m.contains("temperature") && m.contains("F64"), "{m}");
         }
         other => panic!("{other}"),
     }

@@ -49,6 +49,12 @@ Hypothesis check against the h64 inventory (d=64, i=128, V=231, L=3, H=1, n_act=
 - **Decision**: `ParamKey` enum (kind plus layer index), `Entry { key, laya_name, shape }`, table built by a function of `&ModelConfig`. Lookups are by `ParamKey`; Laya strings appear only in `mapping.rs`.
 - **Alternatives**: string-keyed `HashMap` (typos would fail late, in 006); proc-macro (over-engineered).
 
+## R9. Widening half precision (amendment 2026-10-04)
+- **Decision**: F16 and BF16 are widened by hand-written conversions in `raya-weights/src/convert.rs` (bf16: `bits << 16`; fp16: binary16 to binary32 with subnormal normalization via `ilog2`, NaN payload shifted by 13). No `half` dependency.
+- **Verification**: exhaustive over all 65536 fp16 patterns against an f64 computation from the format definition (value, sign of zero, NaN payload), all bf16 patterns, special values; integration tests narrow the vendored h64 weights in a temp dir with independent round-to-nearest-even code and compare the loaded tensors bit for bit with the independently widened values.
+- **Memory**: all-F32 files keep the zero-copy index into the file buffer. Otherwise every tensor is copied or widened into one new `Vec<f32>` (wrapped as the store buffer) and the file buffer is dropped, so the store keeps one buffer either way.
+- **Alternatives**: `half` crate (new dependency for ~20 lines); converting lazily per access (every consumer would pay it and `Tensor` would stop being a plain `&[f32]`); per-tensor `Vec<f32>` (more allocations, no benefit).
+
 ## R6. Error shape
 - **Decision**: one new `Error::Weights(LoadReport)` in `raya-core` with `path`, `missing`, `unused`, `shape` (name, expected, found), listing every offender, multi-line `Display`, sorted lists. Open/read failure reuses `Error::Io{path}`; header parse failure is reported through the same `Weights` variant with the safetensors message and the path. A non-F32 dtype returns `Error::Unimplemented` naming every offending tensor and dtype (spec US1 scenario 4); dtype checks run before the missing/unused/shape comparison.
 - **Rationale**: 001 left the enum open for later features; one variant keeps downstream `match` sites small.

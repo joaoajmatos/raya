@@ -724,6 +724,7 @@ dependencies = [
  "clap",
  "raya-core",
  "raya-weights",
+ "safetensors",
  "serde_json",
  "tempfile",
 ]

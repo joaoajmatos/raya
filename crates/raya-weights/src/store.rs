@@ -6,6 +6,7 @@ use raya_core::{Error, LoadReport, ModelConfig, Result, ShapeMismatch};
 use safetensors::{Dtype, SafeTensors};
 
 use crate::buffer::{read_file, AlignedBuf};
+use crate::convert::{bf16_to_f32, f16_to_f32};
 use crate::key::ParamKey;
 use crate::mapping::expected;
 
@@ -20,9 +21,16 @@ pub struct Tensor<'a> {
 pub struct WeightStore {
     buf: AlignedBuf,
     index: HashMap<ParamKey, (Range<usize>, Vec<usize>)>,
+    source: Vec<&'static str>,
 }
 
 impl WeightStore {
+    /// The dtypes the file stored its tensors in (sorted, e.g. `["BF16"]` or `["BF16", "F32"]`).
+    /// The store itself always serves fp32; F16 and BF16 are widened exactly on load.
+    pub fn source_dtypes(&self) -> &[&'static str] {
+        &self.source
+    }
+
     pub fn get(&self, key: ParamKey) -> Option<Tensor<'_>> {
         let (range, shape) = self.index.get(&key)?;
         let data = bytemuck::try_cast_slice(&self.buf.as_bytes()[range.clone()]).ok()?;
@@ -65,18 +73,19 @@ pub fn load(path: &Path, config: &ModelConfig) -> Result<WeightStore> {
         }
     };
 
-    let mut non_f32: Vec<String> = st
+    let mut unsupported: Vec<String> = st
         .tensors()
         .into_iter()
-        .filter(|(_, view)| view.dtype() != Dtype::F32)
+        .filter(|(_, view)| !matches!(view.dtype(), Dtype::F32 | Dtype::F16 | Dtype::BF16))
         .map(|(name, view)| format!("{name} ({:?})", view.dtype()))
         .collect();
-    if !non_f32.is_empty() {
-        non_f32.sort();
+    if !unsupported.is_empty() {
+        unsupported.sort();
         return Err(Error::Unimplemented(format!(
-            "non-fp32 tensors in {}: {} (dtype conversion is not part of Raya-L)",
+            "unsupported tensor dtypes in {}: {} (only F32, F16 and BF16 are loaded; \
+             F16 and BF16 are widened to fp32)",
             path.display(),
-            non_f32.join(", ")
+            unsupported.join(", ")
         )));
     }
 
@@ -89,8 +98,7 @@ pub fn load(path: &Path, config: &ModelConfig) -> Result<WeightStore> {
         .map(str::to_owned)
         .collect();
     let base = buf.as_bytes().as_ptr() as usize;
-    let mut index = HashMap::new();
-    let mut misaligned = Vec::new();
+    let mut slots = Vec::new();
     for entry in &entries {
         let Ok(view) = st.tensor(&entry.laya_name) else {
             report.missing.push(entry.laya_name.clone());
@@ -104,15 +112,14 @@ pub fn load(path: &Path, config: &ModelConfig) -> Result<WeightStore> {
             });
             continue;
         }
-        if bytemuck::try_cast_slice::<u8, f32>(view.data()).is_err() {
-            misaligned.push(entry.laya_name.clone());
-            continue;
-        }
         let start = view.data().as_ptr() as usize - base;
-        index.insert(
-            entry.key,
-            (start..start + view.data().len(), entry.shape.clone()),
-        );
+        slots.push(Slot {
+            key: entry.key,
+            name: entry.laya_name.clone(),
+            shape: entry.shape.clone(),
+            dtype: view.dtype(),
+            range: start..start + view.data().len(),
+        });
     }
     if !(report.missing.is_empty()
         && report.unused.is_empty()
@@ -121,6 +128,50 @@ pub fn load(path: &Path, config: &ModelConfig) -> Result<WeightStore> {
     {
         return Err(Error::Weights(Box::new(report)));
     }
+    drop(st);
+
+    let mut source: Vec<&'static str> = slots.iter().map(|s| dtype_name(s.dtype)).collect();
+    source.sort_unstable();
+    source.dedup();
+    let (buf, index) = if slots.iter().all(|s| s.dtype == Dtype::F32) {
+        zero_copy(buf, &slots, report)?
+    } else {
+        widen(&buf, &slots)
+    };
+    Ok(WeightStore { buf, index, source })
+}
+
+/// One validated tensor: where its bytes sit in the file buffer and how to read them.
+struct Slot {
+    key: ParamKey,
+    name: String,
+    shape: Vec<usize>,
+    dtype: Dtype,
+    range: Range<usize>,
+}
+
+type Index = HashMap<ParamKey, (Range<usize>, Vec<usize>)>;
+
+fn dtype_name(dtype: Dtype) -> &'static str {
+    match dtype {
+        Dtype::F32 => "F32",
+        Dtype::F16 => "F16",
+        Dtype::BF16 => "BF16",
+        _ => unreachable!("unsupported dtypes are rejected before this point"),
+    }
+}
+
+/// All-fp32 file: the store aliases the file buffer, no copy.
+fn zero_copy(
+    buf: AlignedBuf,
+    slots: &[Slot],
+    mut report: LoadReport,
+) -> Result<(AlignedBuf, Index)> {
+    let misaligned: Vec<&str> = slots
+        .iter()
+        .filter(|s| bytemuck::try_cast_slice::<u8, f32>(&buf.as_bytes()[s.range.clone()]).is_err())
+        .map(|s| s.name.as_str())
+        .collect();
     if !misaligned.is_empty() {
         report.detail = Some(format!(
             "tensors not 4-byte aligned in the file: {}",
@@ -128,8 +179,43 @@ pub fn load(path: &Path, config: &ModelConfig) -> Result<WeightStore> {
         ));
         return Err(Error::Weights(Box::new(report)));
     }
-    drop(st);
-    Ok(WeightStore { buf, index })
+    let index = slots
+        .iter()
+        .map(|s| (s.key, (s.range.clone(), s.shape.clone())))
+        .collect();
+    Ok((buf, index))
+}
+
+/// File with F16 or BF16 tensors: every tensor is copied (and widened where needed) into one
+/// new fp32 buffer; the caller then drops the file buffer.
+fn widen(file: &AlignedBuf, slots: &[Slot]) -> (AlignedBuf, Index) {
+    let bytes = file.as_bytes();
+    let total: usize = slots
+        .iter()
+        .map(|s| s.shape.iter().product::<usize>())
+        .sum();
+    let mut words: Vec<f32> = Vec::with_capacity(total);
+    let mut index = HashMap::with_capacity(slots.len());
+    for s in slots {
+        let src = &bytes[s.range.clone()];
+        let start = words.len() * 4;
+        match s.dtype {
+            Dtype::F32 => words.extend(
+                src.chunks_exact(4)
+                    .map(|c| f32::from_le_bytes([c[0], c[1], c[2], c[3]])),
+            ),
+            Dtype::F16 => words.extend(
+                src.chunks_exact(2)
+                    .map(|c| f16_to_f32(u16::from_le_bytes([c[0], c[1]]))),
+            ),
+            _ => words.extend(
+                src.chunks_exact(2)
+                    .map(|c| bf16_to_f32(u16::from_le_bytes([c[0], c[1]]))),
+            ),
+        }
+        index.insert(s.key, (start..words.len() * 4, s.shape.clone()));
+    }
+    (AlignedBuf::from_words(words), index)
 }
 
 /// Loads a Laya checkpoint directory: `model.safetensors`, `rl_agent_config.json`,

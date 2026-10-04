@@ -14,6 +14,7 @@ raya-core.workspace = true
 raya-weights.workspace = true
 
 [dev-dependencies]
+safetensors.workspace = true
 serde_json.workspace = true
 tempfile.workspace = true
 
