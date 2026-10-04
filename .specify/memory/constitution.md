@@ -35,12 +35,16 @@ inference. Compression, architecture variants, training, and int8/fp16/bf16 path
 Low-precision weights MAY be converted to fp32 on load. `docs/feasibility.md` is the source of truth for
 scope; a change of scope is a constitution or feasibility amendment first, a feature second.
 
-### V. Portable First, SIMD Optional
+### V. Portable First, Runtime-Detected SIMD
 
-The target CPU and precision are an open decision. The project MUST NOT choose a SIMD target: a portable
-path MUST always exist and be the default, and AVX2, NEON or other micro-kernels MUST be optional cargo
-features with runtime dispatch and a portable fallback. `unsafe` is permitted only in `raya-kernels`;
-every other crate MUST forbid it. The project MUST build and pass tests on Linux x86_64 and macOS arm64,
+The target CPU and precision are an open decision. The project MUST NOT choose a SIMD target: no
+`target-cpu` or `target-feature` build flags, and a portable path MUST always exist and MUST be used
+whenever runtime detection fails or the CPU lacks a feature. On x86_64, AVX2 micro-kernels are compiled
+into default builds and selected at construction by runtime feature detection (AVX2 and FMA); NEON and
+any other micro-kernels MUST be optional cargo features with runtime dispatch and a portable fallback.
+Callers MUST be able to request the portable backend explicitly, and the backend actually selected MUST
+be recorded with benchmark results. `unsafe` is permitted only in `raya-kernels`; every other crate MUST
+forbid it. The project MUST build and pass tests on Linux x86_64 and macOS arm64,
 and Windows builds MUST be supported for the researcher's measurement machine.
 
 ### VI. Correctness Before Speed, Reference Before Kernel
@@ -92,4 +96,19 @@ Amendments state their rationale and affected principles, update `docs/feasibili
 changes, preserve the ratification date, and bump the version: MAJOR for incompatible governance changes,
 MINOR for new or materially expanded principles, PATCH for clarifications.
 
-**Version**: 1.0.0 | **Ratified**: 2026-09-30 | **Last Amended**: 2026-09-30
+## Amendments
+
+- **1.1.0 (2026-10-04), MINOR**: Principle V, "Portable First, SIMD Optional" becomes "Portable First,
+  Runtime-Detected SIMD". Approved by the human on 2026-10-04 (decision: compile AVX2 into default x86_64
+  builds, selected by runtime detection with the portable fallback; NEON stays an optional feature and
+  macos-14 arm64 stays on the portable path). Rationale: on the target machine (i7-8700) the AVX2
+  micro-kernels are the faster path, and gating them behind a cargo flag meant default builds, and anyone
+  who forgot the flag, ran the slower one. Evidence, as reported by the human and not re-measured in the
+  amending change (laya/raya sweep, i7-8700, 8192 tokens, one thread, 16.7% background load): speedups of
+  4.56x (Block3) and 4.46x (Window64) with AVX2 versus 3.03x and 2.79x for the portable path (baseline and
+  run id as recorded in that sweep). Unchanged by this amendment: no `target-cpu` or `target-feature` build
+  flags, portable always present and the fallback, `unsafe` only in `raya-kernels`, target CPU and precision
+  still an open human decision (`docs/feasibility.md` scope is unchanged, so it is not edited). Affects:
+  principle V; spec 007 FR-003 and its clarification on CPU feature baseline; README scope line.
+
+**Version**: 1.1.0 | **Ratified**: 2026-09-30 | **Last Amended**: 2026-10-04
