@@ -755,6 +755,10 @@ name = "raya-tokenizer"
 version = "0.0.0"
 dependencies = [
  "raya-core",
+ "safetensors",
+ "serde",
+ "serde_json",
+ "tempfile",
  "tokenizers",
 ]
 
