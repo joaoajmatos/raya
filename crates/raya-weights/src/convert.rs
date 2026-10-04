@@ -13,6 +13,7 @@ pub(crate) fn f16_to_f32(h: u16) -> f32 {
     let man = bits & 0x3ff;
     let out = match exp {
         0 if man == 0 => sign,
+        // `man != 0` here, so `ilog2` is defined and `p` is 0..=9.
         0 => {
             // Subnormal: man * 2^-24. With `p` the index of the top set bit it is
             // 1.xxx * 2^(p - 24), a normal f32.

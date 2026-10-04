@@ -56,7 +56,7 @@ The user is the Raya implementer (feature 006 consumes the store) and the resear
 
 ### User Story 1 - Load Laya Weights Exactly (Priority: P1)
 
-A Laya `model.safetensors` plus its config loads into a `WeightStore`. Every tensor is available by Raya's internal name as a fp32 slice with its shape, and values are bit-identical to the file.
+A Laya `model.safetensors` plus its config loads into a `WeightStore`. Every tensor is available by Raya's internal name as a fp32 slice with its shape, and values are bit-identical to the file for F32 tensors (F16/BF16 tensors are widened exactly, see the 2026-10-04 amendment).
 
 **Why this priority**: No forward pass is possible without weights.
 
@@ -66,7 +66,7 @@ A Laya `model.safetensors` plus its config loads into a `WeightStore`. Every ten
 
 1. **Given** the h64 and h128 fixture weights and their configs, **When** loaded, **Then** all 44 tensors are available by internal name with the config-derived shapes.
 2. **Given** a loaded store, **When** any tensor is compared with the source file, **Then** values are bit-identical.
-3. **Given** a loaded store, **When** tensors are read, **Then** no per-tensor copy is made (slices borrow from the store's single buffer).
+3. **Given** a loaded store, **When** tensors are read, **Then** no per-tensor copy is made: slices borrow from the store's single buffer (for an all-F32 file that buffer is the file's data; for a file with F16/BF16 tensors it is the one widened fp32 buffer built at load time).
 4. **Given** a checkpoint whose tensors are F16 or BF16 (all or some), **When** loaded, **Then** each such tensor is widened exactly to fp32 and the store serves fp32 slices; **Given** a tensor of any other dtype, **Then** loading fails with `Error::Unimplemented` naming every such tensor and dtype.
 
 ---
@@ -118,7 +118,7 @@ Any missing, unused, wrongly shaped or wrongly typed tensor aborts loading with 
 - **FR-002**: One key-mapping table in code from Laya `state_dict` names to Raya typed keys (parameter kind plus layer index), parameterized by the config (layer count, layer 0 without `attn_norm`, head layer count). It is the only place Laya names appear.
 - **FR-003**: Shape validation against the `raya-core` config with tensor-named errors; the expected shape of each tensor is derived from the config, not from the inventory.
 - **FR-004**: Errors use the shared `raya_core::Error`; one added variant carries the full report (missing, unused, shape, dtype, duplicate). Loading is all-or-nothing and reports every mismatch in one error.
-- **FR-005**: `WeightStore` exposes `&[f32]` plus shape by internal name, with no per-tensor copy. Memory is released when the store drops.
+- **FR-005**: `WeightStore` exposes `&[f32]` plus shape by internal name, with no per-tensor copy at read time (one buffer per store: the file's data for an all-F32 file, the widened fp32 buffer when any tensor was F16/BF16). Memory is released when the store drops.
 - **FR-006**: `raya info <dir>` per User Story 3, reading the directory layout `model.safetensors` + `rl_agent_config.json` + `encoder/config.json`.
 - **FR-007**: No model math, no packing/repacking of weights, no tied or derived tensors synthesized. `reference/` and vendored fixtures are never modified; tests use temp copies.
 - **FR-008**: No `unsafe` in `raya-weights` or `raya-cli` (constitution: `unsafe` only in `raya-kernels`).
@@ -126,7 +126,7 @@ Any missing, unused, wrongly shaped or wrongly typed tensor aborts loading with 
 ### Key Entities
 
 - **Key mapping table**: ordered list of (Laya name, Raya internal name, shape rule) built from the config.
-- **WeightStore**: owns the file's data; maps internal name to fp32 slice and shape.
+- **WeightStore**: owns one fp32 buffer (the file's data, or the widened copy for F16/BF16 files); maps internal name to fp32 slice and shape; records the source dtypes.
 - **Load report**: the aggregate error listing missing, unused, mis-shaped and mis-typed tensors.
 
 ## Success Criteria *(mandatory)*

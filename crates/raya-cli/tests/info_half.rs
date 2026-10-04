@@ -10,7 +10,9 @@ fn data() -> PathBuf {
 }
 
 /// A checkpoint dir whose weights are the h64 fixture narrowed to bf16 (high half of each f32),
-/// generated in a temp dir; the vendored file is only read.
+/// generated in a temp dir; the vendored file is only read. The narrowing truncates (round toward
+/// zero), unlike the round-to-nearest-even in raya-weights `load_half.rs`: this test checks what
+/// `raya info` prints, not conversion parity.
 fn bf16_checkpoint() -> tempfile::TempDir {
     let tmp = tempfile::tempdir().unwrap();
     let inventory = std::fs::read_to_string(data().join("inventory.json")).unwrap();

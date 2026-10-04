@@ -54,6 +54,10 @@ impl WeightStore {
 }
 
 /// Reads `path` and checks it against the parameter set `config` implies.
+///
+/// An all-F32 file is served zero-copy from the single file buffer. F16 and BF16 tensors are
+/// widened to fp32 into a second buffer, so while loading such a file the peak memory is the
+/// file plus its fp32 copy (about 1.5x the final fp32 size); the file buffer is dropped after.
 pub fn load(path: &Path, config: &ModelConfig) -> Result<WeightStore> {
     let entries = expected(config)?;
     let buf = read_file(path)?;
@@ -213,6 +217,8 @@ fn widen(file: &AlignedBuf, slots: &[Slot]) -> (AlignedBuf, Index) {
                     .map(|c| bf16_to_f32(u16::from_le_bytes([c[0], c[1]]))),
             ),
         }
+        // The index is byte-based like the zero-copy path; `start` is a multiple of 4 and `words`
+        // is a `Vec<f32>`, so every range is 4-aligned by construction (`get` casts it back).
         index.insert(s.key, (start..words.len() * 4, s.shape.clone()));
     }
     (AlignedBuf::from_words(words), index)
