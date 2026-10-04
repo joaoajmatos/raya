@@ -65,7 +65,7 @@ A Laya `model.safetensors` plus its config loads into a `WeightStore`. Every ten
 **Acceptance Scenarios**:
 
 1. **Given** the h64 and h128 fixture weights and their configs, **When** loaded, **Then** all 44 tensors are available by internal name with the config-derived shapes.
-2. **Given** a loaded store, **When** any tensor is compared with the source file, **Then** values are bit-identical.
+2. **Given** a loaded store, **When** any tensor is compared with the source file, **Then** F32 values are bit-identical, and F16/BF16 values equal the exact fp32 widening of the stored values (see the 2026-10-04 amendment).
 3. **Given** a loaded store, **When** tensors are read, **Then** no per-tensor copy is made: slices borrow from the store's single buffer (for an all-F32 file that buffer is the file's data; for a file with F16/BF16 tensors it is the one widened fp32 buffer built at load time).
 4. **Given** a checkpoint whose tensors are F16 or BF16 (all or some), **When** loaded, **Then** each such tensor is widened exactly to fp32 and the store serves fp32 slices; **Given** a tensor of any other dtype, **Then** loading fails with `Error::Unimplemented` naming every such tensor and dtype.
 
