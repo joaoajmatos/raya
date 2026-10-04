@@ -103,12 +103,21 @@ MINOR for new or materially expanded principles, PATCH for clarifications.
   builds, selected by runtime detection with the portable fallback; NEON stays an optional feature and
   macos-14 arm64 stays on the portable path). Rationale: on the target machine (i7-8700) the AVX2
   micro-kernels are the faster path, and gating them behind a cargo flag meant default builds, and anyone
-  who forgot the flag, ran the slower one. Evidence (a hypothesis until sourced, per principle III): speedup
-  figures reported by the human from a laya/raya sweep on the i7-8700, 8192 tokens, one thread, 16.7%
-  background load: 4.56x (Block3) and 4.46x (Window64) with AVX2 versus 3.03x and 2.79x for the portable
-  path. They were not measured or reproduced in this repository, and the source repo, commit, run id, baseline,
-  rustc version and feature flags were not provided with the approval; the human is to record them here.
-  The amendment rests on the human's decision, not on these figures. Unchanged by this amendment: no `target-cpu` or `target-feature` build
+  who forgot the flag, ran the slower one. Evidence (source, per principle III and the workspace
+  rule on cross-repo numbers): repo `raya`, `results/kernel-bench/` (git-ignored, local to the measuring
+  machine). Portable run `unix-1790892082.json` (run id `unix:1790892082`, built at commit `99687aa`,
+  sha256 prefix `8da32d6ee750c69a`) and AVX2 run `unix-1790892258.json` (run id `unix:1790892258`, built at
+  commit `0d91321`, sha256 prefix `94195428d08a9171`); `git diff 99687aa 0d91321 -- crates/raya-kernels` is
+  empty, so the kernel sources are the same. Hardware: Intel64 Family 6 Model 158 Stepping 10 (the
+  i7-8700, 6 physical and 12 logical cores), rustc 1.94.1, no RUSTFLAGS, cargo features `portable` and
+  `portable,avx2`. At 8192 tokens and one thread the tiled kernel's speedup over the in-crate naive oracle
+  is 4.56x (Block3) and 4.46x (Window64) with AVX2 versus 3.03x and 2.79x portable; directly, tiled AVX2
+  (607.9 and 193.9 ms) is 1.41x and 1.69x faster than tiled portable (860.2 and 328.1 ms). Caveats: single
+  runs; the baseline is the naive oracle, not Laya; the 16.7% background load is the human's statement and
+  is not recorded in the JSON files; the `label` field of these files reads "target machine" but the human
+  reports that the `RAYA_TARGET_MACHINE` label in these result files is unreliable, so machine identity
+  rests on the CPU model string and the human's statement. The amendment rests on the human's decision,
+  not only on these figures. Unchanged by this amendment: no `target-cpu` or `target-feature` build
   flags, portable always present and the fallback, `unsafe` only in `raya-kernels`, target CPU and precision
   still an open human decision (`docs/feasibility.md` scope is unchanged, so it is not edited). Affects:
   principle V; spec 007 FR-003 and its clarification on CPU feature baseline; README scope line.
