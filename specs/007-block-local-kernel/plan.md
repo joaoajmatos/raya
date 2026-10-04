@@ -44,7 +44,7 @@ of SC-004, negative or not.
 | II. Parity via golden fixtures | Pass with condition. PyTorch goldens are used when feature 002 output exists; otherwise the naive oracle is the reference and the notes say so. |
 | III. Measure, do not assume | Pass. Metadata JSON per run; cloud numbers labeled "cloud-agent hardware, indicative only"; the 85 ms comparison is stated invalid until run through 008. |
 | IV. Raya-L, fp32, inference only | Pass. fp32 only, no other dtypes. |
-| V. Portable first, SIMD optional | Pass. `wide` path is the default; `avx2`/`neon` are off by default with runtime dispatch and fallback. `unsafe` stays in `raya-kernels`. |
+| V. Portable first, runtime-detected SIMD | Pass (constitution 1.1.0, amended 2026-10-04). `wide` is the portable fallback; AVX2 is compiled into x86_64 builds and chosen at run time; `neon` stays an optional feature. `unsafe` stays in `raya-kernels`. |
 | VI. Reference before kernel | Pass. Naive oracle lands first (tasks order) and tiled is tested against it. This spike benchmarks the kernel in isolation, a recorded deviation (see Complexity Tracking), and the notes and the PR description state it. |
 | VII. Small surface, explicit errors | Pass with note. `wide` and `num_cpus` are new dependencies, authorised by the spec clarifications and the spec 001 amendment. Shape or length errors return `KernelError`, not a panic. |
 

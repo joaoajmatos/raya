@@ -1,5 +1,7 @@
 use serde::Serialize;
 
+use crate::simd::Backend;
+
 pub const LABEL_CLOUD: &str = "cloud-agent hardware, indicative only";
 
 /// Machine and build description stored next to benchmark results (constitution III).
@@ -11,6 +13,8 @@ pub struct BenchMetadata {
     pub physical_cpus: usize,
     pub threads: usize,
     pub features: Vec<String>,
+    /// The micro-kernel backend the run used (`portable`, `avx2` or `neon`).
+    pub backend: String,
     pub rustflags: String,
     pub rustc: String,
     pub git_commit: String,
@@ -44,7 +48,8 @@ fn cpu_model() -> String {
 
 fn enabled_features() -> Vec<String> {
     let mut f = vec!["portable".to_string()];
-    if cfg!(feature = "avx2") {
+    // Compiled in by default on x86_64; whether it ran is `backend`.
+    if cfg!(target_arch = "x86_64") {
         f.push("avx2".into());
     }
     if cfg!(feature = "neon") {
@@ -76,6 +81,7 @@ impl BenchMetadata {
             physical_cpus: num_cpus::get_physical(),
             threads,
             features: enabled_features(),
+            backend: Backend::detect().name().to_string(),
             rustflags: option_env!("RUSTFLAGS").unwrap_or("").to_string(),
             rustc: env!("RAYA_RUSTC_VERSION").to_string(),
             git_commit: env!("RAYA_GIT_COMMIT").to_string(),
@@ -98,6 +104,7 @@ mod tests {
             "physical_cpus",
             "threads",
             "features",
+            "backend",
             "rustflags",
             "rustc",
             "git_commit",

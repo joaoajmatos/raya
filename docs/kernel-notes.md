@@ -33,9 +33,10 @@ Kernels (`crates/raya-kernels`):
   keys outside the mask (the `Window64` range is about 136 keys per 8 rows, `Block3` the 3-block span).
 - Layout `[heads][seq][head_dim]`, row-major f32; padding through `valid_len` (`AttnParams`).
 - SIMD: `wide::f32x8` portable micro-kernels by default (QK: 2 rows x 2 keys register blocking; PV: a row's
-  64 output lanes held in registers across keys; exp: `wide` vectorised). Optional `avx2` (AVX2 + FMA) and
-  `neon` features replace the two micro-kernels, selected once at construction by runtime detection, with
-  fallback to portable. Default builds use only baseline target features.
+  64 output lanes held in registers across keys; exp: `wide` vectorised). AVX2 + FMA micro-kernels
+  (compiled into every x86_64 build since constitution 1.1.0; the `avx2` cargo feature is now a no-op) and the
+  optional `neon` feature replace the two micro-kernels, selected once at construction by runtime
+  detection, with fallback to portable. Builds use only baseline target features (no `target-cpu` flags).
 - Threads: `RAYA_THREADS`, else `num_cpus::get_physical()`.
 
 ## Correctness
@@ -57,7 +58,7 @@ cargo test -p raya-kernels
 cargo test -p raya-kernels --release -- --ignored            # 4096 and 8192 equivalence
 cargo bench -p raya-kernels --bench local_attention           # writes results/kernel-bench/<ts>.json
 RAYA_THREADS=1 cargo bench -p raya-kernels --bench local_attention
-cargo bench -p raya-kernels --bench local_attention --features avx2
+RAYA_BACKEND=portable cargo bench -p raya-kernels --bench local_attention   # force the portable path
 cargo bench -p raya-kernels --bench local_attention --features stage-timing   # stage percentages
 RAYA_BENCH_SEQS=512 cargo bench -p raya-kernels --bench local_attention       # quick run
 ```
@@ -133,7 +134,7 @@ What this does and does not show:
 | First portable kernel (per-score dot, scalar `exp`) | Block3 61.6 ms, Window64 24.6 ms (2.8x, 2.7x versus naive) |
 | `wide` vectorised `exp` for the softmax | Block3 58.1 ms, Window64 24.8 ms: little change; the softmax stage also holds the max, scale and rescale passes |
 | QK 2x2 register blocking (each loaded vector feeds two products) | Block3 52.2 ms, Window64 22.6 ms (3.5x, 3.1x) |
-| AVX2 + FMA micro-kernels (feature) | about 1.2x to 1.5x over the portable path at 2K-8K (tiled, one thread) |
+| AVX2 + FMA micro-kernels (runtime-detected; was a feature) | about 1.2x to 1.5x over the portable path at 2K-8K (tiled, one thread) |
 
 Slower or less useful than expected: the vectorised exp barely helped; softmax remains about 28-30% of the
 time, so the online-softmax bookkeeping (max, scale, rescale, per-row bounds) matters as much as the
