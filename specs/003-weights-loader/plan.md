@@ -35,7 +35,7 @@ Load a Laya `model.safetensors` into a `WeightStore` of fp32 slices addressed by
 | I Laya is the specification | Pass. Names and layout come from `inventory.json` and `laya/common.py`; nothing is "fixed". |
 | II Parity by goldens | Pass. Inventory coverage test plus bit equality against the vendored file; negative tests localize by tensor name. |
 | III Measure, do not assume | Pass. No perf claims; `raya info` computes the parameter count. The shape table in research R4 is a hypothesis verified by the coverage test. |
-| IV Raya-L, fp32 | Pass. Non-fp32 returns `Unimplemented`; bf16/fp16 conversion is left to the human. |
+| IV Raya-L, fp32 | Pass. F16/BF16 are widened to fp32 on load (permitted by IV, approved 2026-10-04); other dtypes return `Unimplemented`. No half-precision kernels. |
 | V Portable first | Pass. No SIMD or layout choice; no packing hook. |
 | VI Correctness before speed | Pass. Nothing optimized. |
 | VII Small surface, explicit errors | Pass with one justified dependency (`bytemuck`). Loader fails loudly naming missing, unused and mis-shaped tensors. |

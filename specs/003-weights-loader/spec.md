@@ -26,7 +26,7 @@
 Resolved by the implementing agent with defaults (no user questions asked).
 
 - Q: Memory-map the file or read it once? → A: Read once into a single owned, 4-byte-aligned buffer; tensors are borrowed views of it. `memmap2` needs `unsafe`, which is reserved for `raya-kernels` (constitution, FR-008). Memory-mapping is deferred to a later feature that can place it in `raya-kernels` or amend the rule.
-- Q: What happens to bf16/fp16 tensors? → A: Rejected with `Error::Unimplemented` naming tensor and dtype. Constitution IV allows conversion on load but this feature stays strictly fp32; see Human-owned items.
+- Q: What happens to bf16/fp16 tensors? → A: *(superseded 2026-10-04, see the amendment below)* Originally rejected with `Error::Unimplemented`; they are now widened to fp32 on load.
 - Q: What does the loader take as input? → A: A weights file path plus an already-built `ModelConfig` (fixtures are flat and h128's config lives in `meta.json`), and a convenience `load_dir` for the `model.safetensors` + `rl_agent_config.json` + `encoder/config.json` layout used by `raya info`.
 - Q: How are tensors addressed? → A: By a typed key (parameter kind plus layer index), not free strings; the mapping table is the only place Laya string names appear.
 - Q: How are loader failures reported? → A: One new `Error` variant carrying all mismatches (missing, unused, shape, dtype, duplicate), so a caller sees every problem in one run; I/O and parse failures carry the path.
@@ -34,9 +34,20 @@ Resolved by the implementing agent with defaults (no user questions asked).
 - Q: Pluggable GEMM packing hook? → A: Dropped; no consumer, SIMD target undecided.
 - Q: Config variants (e.g. zero head layers)? → A: The mapping follows `ModelConfig`/`ModelShape`; whatever `ModelShape::ensure_supported` rejects is rejected before any file is read.
 
+### Amendment 2026-10-04: widen half precision on load
+
+Approved by the human (follow-up queued after raya:003 merged); constitution IV already permits "low-precision weights MAY be converted to fp32 on load".
+
+- Q: What is converted? → A: F16 and BF16 tensors, exactly (every value of both formats is an f32): bf16 by a 16-bit shift, fp16 by IEEE 754 binary16 to binary32 including subnormals, signed zeros, infinities and NaN payloads. No `half` crate; the conversions are small and tested exhaustively over all 65536 fp16 patterns.
+- Q: Mixed dtypes in one file? → A: Allowed. Each tensor is read in its own dtype; F32 tensors are copied bit for bit.
+- Q: Memory? → A: An all-F32 file keeps the zero-copy path unchanged (one buffer, no per-tensor copy). A file with any F16/BF16 tensor is read once, widened into one new fp32 buffer, and the file buffer is dropped; peak memory is the file plus the fp32 copy. `total_bytes` and `raya info` `bytes` report the resident fp32 size.
+- Q: Does the loader hide the source dtype? → A: No. `WeightStore::source_dtypes()` lists them (e.g. `["BF16"]`) and `raya info` prints a `source_dtype` line.
+- Q: Which dtypes still fail? → A: Anything other than F32, F16, BF16 (for example F64, integers, fp8) returns `Error::Unimplemented` naming every offending tensor and dtype, before the missing/unused/shape comparison.
+- Note: widening is exact, but Raya then computes in fp32 on bf16/fp16-rounded weights; it is not bit-identical to a Laya run that computes in half precision. Parity claims for such checkpoints need their own goldens (not part of this amendment).
+
 ### Human-owned items (not decided here)
 
-- Whether bf16/fp16 checkpoints must load via fp32 conversion (precision scope beyond fp32; Constitution IV permits it, the brief for this feature excludes it).
+- ~~Whether bf16/fp16 checkpoints must load via fp32 conversion~~ Decided by the human on 2026-10-04: yes, widen on load, fp32 compute only (see the amendment below).
 - Target CPU and any SIMD-oriented weight layout/packing (open; the packing hook is dropped until decided).
 
 ## User Scenarios & Testing *(mandatory)*
@@ -45,7 +56,7 @@ The user is the Raya implementer (feature 006 consumes the store) and the resear
 
 ### User Story 1 - Load Laya Weights Exactly (Priority: P1)
 
-A Laya `model.safetensors` plus its config loads into a `WeightStore`. Every tensor is available by Raya's internal name as a fp32 slice with its shape, and values are bit-identical to the file.
+A Laya `model.safetensors` plus its config loads into a `WeightStore`. Every tensor is available by Raya's internal name as a fp32 slice with its shape, and values are bit-identical to the file for F32 tensors (F16/BF16 tensors are widened exactly, see the 2026-10-04 amendment).
 
 **Why this priority**: No forward pass is possible without weights.
 
@@ -54,9 +65,9 @@ A Laya `model.safetensors` plus its config loads into a `WeightStore`. Every ten
 **Acceptance Scenarios**:
 
 1. **Given** the h64 and h128 fixture weights and their configs, **When** loaded, **Then** all 44 tensors are available by internal name with the config-derived shapes.
-2. **Given** a loaded store, **When** any tensor is compared with the source file, **Then** values are bit-identical.
-3. **Given** a loaded store, **When** tensors are read, **Then** no per-tensor copy is made (slices borrow from the store's single buffer).
-4. **Given** a checkpoint whose tensors are not fp32, **When** loaded, **Then** loading fails with `Error::Unimplemented` naming the tensor and dtype (no conversion path in this feature).
+2. **Given** a loaded store, **When** any tensor is compared with the source file, **Then** F32 values are bit-identical, and F16/BF16 values equal the exact fp32 widening of the stored values (see the 2026-10-04 amendment).
+3. **Given** a loaded store, **When** tensors are read, **Then** no per-tensor copy is made: slices borrow from the store's single buffer (for an all-F32 file that buffer is the file's data; for a file with F16/BF16 tensors it is the one widened fp32 buffer built at load time).
+4. **Given** a checkpoint whose tensors are F16 or BF16 (all or some), **When** loaded, **Then** each such tensor is widened exactly to fp32 and the store serves fp32 slices; **Given** a tensor of any other dtype, **Then** loading fails with `Error::Unimplemented` naming every such tensor and dtype.
 
 ---
 
@@ -103,11 +114,11 @@ Any missing, unused, wrongly shaped or wrongly typed tensor aborts loading with 
 
 ### Functional Requirements
 
-- **FR-001**: Load a single `model.safetensors` (weights path plus a `ModelConfig`, and a directory convenience) for Raya-L; only fp32 tensors are accepted. Any other dtype returns `Error::Unimplemented`. Sharded checkpoints are out of scope (Laya writes one file).
+- **FR-001**: Load a single `model.safetensors` (weights path plus a `ModelConfig`, and a directory convenience) for Raya-L; F32 tensors are used as they are and F16/BF16 tensors are widened exactly to fp32 on load (compute stays fp32; no half-precision kernels). Any other dtype returns `Error::Unimplemented`. Sharded checkpoints are out of scope (Laya writes one file).
 - **FR-002**: One key-mapping table in code from Laya `state_dict` names to Raya typed keys (parameter kind plus layer index), parameterized by the config (layer count, layer 0 without `attn_norm`, head layer count). It is the only place Laya names appear.
 - **FR-003**: Shape validation against the `raya-core` config with tensor-named errors; the expected shape of each tensor is derived from the config, not from the inventory.
 - **FR-004**: Errors use the shared `raya_core::Error`; one added variant carries the full report (missing, unused, shape, dtype, duplicate). Loading is all-or-nothing and reports every mismatch in one error.
-- **FR-005**: `WeightStore` exposes `&[f32]` plus shape by internal name, with no per-tensor copy. Memory is released when the store drops.
+- **FR-005**: `WeightStore` exposes `&[f32]` plus shape by internal name, with no per-tensor copy at read time (one buffer per store: the file's data for an all-F32 file, the widened fp32 buffer when any tensor was F16/BF16). Memory is released when the store drops.
 - **FR-006**: `raya info <dir>` per User Story 3, reading the directory layout `model.safetensors` + `rl_agent_config.json` + `encoder/config.json`.
 - **FR-007**: No model math, no packing/repacking of weights, no tied or derived tensors synthesized. `reference/` and vendored fixtures are never modified; tests use temp copies.
 - **FR-008**: No `unsafe` in `raya-weights` or `raya-cli` (constitution: `unsafe` only in `raya-kernels`).
@@ -115,7 +126,7 @@ Any missing, unused, wrongly shaped or wrongly typed tensor aborts loading with 
 ### Key Entities
 
 - **Key mapping table**: ordered list of (Laya name, Raya internal name, shape rule) built from the config.
-- **WeightStore**: owns the file's data; maps internal name to fp32 slice and shape.
+- **WeightStore**: owns one fp32 buffer (the file's data, or the widened copy for F16/BF16 files); maps internal name to fp32 slice and shape; records the source dtypes.
 - **Load report**: the aggregate error listing missing, unused, mis-shaped and mis-typed tensors.
 
 ## Success Criteria *(mandatory)*
@@ -131,5 +142,5 @@ Any missing, unused, wrongly shaped or wrongly typed tensor aborts loading with 
 - Laya's decision-head parameters (`type_emb`, `scorer`, `act_head`, `temperature`) are part of the inventory and must be mapped.
 - Reading the file into memory once is acceptable. True memory-mapping needs `unsafe`, which the constitution reserves for `raya-kernels`, so it is deferred (see Clarifications).
 - The pluggable GEMM-packing hook from the earlier draft is dropped: no kernel consumes it yet and the SIMD target is an open human decision. Feature 006 or a kernel feature may add it.
-- bf16/fp16 conversion on load (allowed by constitution principle IV) is not part of this feature; adding it is a scope decision for the human.
+- Half-precision *compute*, rounding fp32 weights down, and any dtype other than F32/F16/BF16 are out of scope.
 - The h128 config is taken from the vendored `tests/data/fastpath_off/meta.json` `encoder_config`/`agent_config`; no new fixture is needed.

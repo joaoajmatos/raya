@@ -11,6 +11,12 @@ pub struct AlignedBuf {
 }
 
 impl AlignedBuf {
+    /// Wraps already-widened f32 data so it is served through the same byte-range index.
+    pub fn from_words(words: Vec<f32>) -> Self {
+        let len = words.len() * 4;
+        Self { words, len }
+    }
+
     pub fn as_bytes(&self) -> &[u8] {
         &bytemuck::cast_slice::<f32, u8>(&self.words)[..self.len]
     }

@@ -8,7 +8,7 @@ pub fn render(dir: &Path, config: &ModelConfig, store: &WeightStore) -> String {
     let e = &config.encoder;
     format!(
         "checkpoint: {}\nhidden_size: {}\nencoder_layers: {}\nattention_heads: {}\nhead_layers: {}\n\
-         tensors: {}\nparameters: {}\nbytes: {}\n",
+         tensors: {}\nparameters: {}\nbytes: {}\nsource_dtype: {}\n",
         dir.display(),
         e.hidden_size,
         e.num_hidden_layers,
@@ -17,5 +17,6 @@ pub fn render(dir: &Path, config: &ModelConfig, store: &WeightStore) -> String {
         store.tensor_count(),
         store.parameter_count(),
         store.total_bytes(),
+        store.source_dtypes().join("+"),
     )
 }

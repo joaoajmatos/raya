@@ -67,7 +67,8 @@ fn info_prints_computed_numbers() {
             "head_layers",
             "tensors",
             "parameters",
-            "bytes"
+            "bytes",
+            "source_dtype"
         ]
     );
     assert_eq!(
@@ -80,6 +81,7 @@ fn info_prints_computed_numbers() {
             "tensors: 44",
             "parameters: 210822",
             &format!("bytes: {}", 210_822 * 4),
+            "source_dtype: F32",
         ]
     );
 }
