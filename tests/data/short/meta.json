@@ -15,6 +15,7 @@
     ]
   },
   "case": "short",
+  "config_dir": "../fixture-h64",
   "device": "cpu",
   "dtype": "float32",
   "encoder_config": {
@@ -88,7 +89,7 @@
   "fastpath_tolerance": 1e-06,
   "fixture_checkpoint_seed": 1234,
   "fixture_hidden": 64,
-  "git_dirty": false,
+  "git_dirty": true,
   "head_heads": 1,
   "input": {
     "head_max_len": 48,
@@ -109,7 +110,7 @@
   },
   "kind": "forward-golden",
   "laya_diff_empty": true,
-  "laya_sparse_commit": "cefb300e8e6258d36b7d03a51b31fc6a2fdcc3be",
+  "laya_sparse_commit": "357ad53e393286b565f6c77fb025df6920568528",
   "layer_types": [
     "full_attention",
     "sliding_attention",

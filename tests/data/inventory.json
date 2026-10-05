@@ -373,10 +373,10 @@
       "vocab_size": 231
     },
     "fixture_hidden": 64,
-    "git_dirty": false,
+    "git_dirty": true,
     "kind": "weights-inventory",
     "laya_diff_empty": true,
-    "laya_sparse_commit": "cefb300e8e6258d36b7d03a51b31fc6a2fdcc3be",
+    "laya_sparse_commit": "357ad53e393286b565f6c77fb025df6920568528",
     "mode": "eval",
     "model": "fixture",
     "schema_version": 1,

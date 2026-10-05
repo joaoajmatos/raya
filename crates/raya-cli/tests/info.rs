@@ -14,7 +14,7 @@ fn raya(dir: &Path) -> Output {
 }
 
 /// Configs come from `inventory.json` `meta`, which matches the h64 weights
-/// (`fixture-tiny/` has a different `vocab_size`).
+/// (`fixture-h64/` now carries the same config).
 fn checkpoint(with_weights: bool) -> tempfile::TempDir {
     let tmp = tempfile::tempdir().unwrap();
     let inventory = std::fs::read_to_string(data().join("inventory.json")).unwrap();

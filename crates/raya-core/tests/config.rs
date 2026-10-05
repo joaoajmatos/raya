@@ -6,7 +6,7 @@ use raya_core::{
 use serde_json::{json, Value};
 
 fn fixture_dir() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../tests/data/fixture-tiny")
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../tests/data/fixture-h64")
 }
 
 fn fixture_json() -> (Value, Value) {
@@ -50,7 +50,7 @@ fn fixture_parses_with_every_field() {
     assert!((e.norm_eps - 1e-5).abs() < f64::EPSILON);
     assert!(!e.norm_bias && !e.attention_bias && !e.mlp_bias);
     assert_eq!(e.hidden_activation, Activation::Gelu);
-    assert_eq!((e.max_position_embeddings, e.vocab_size), (2048, 100));
+    assert_eq!((e.max_position_embeddings, e.vocab_size), (2048, 231));
     assert_eq!(
         (
             e.pad_token_id,
@@ -133,7 +133,12 @@ fn missing_required_field_names_the_key() {
 #[test]
 fn missing_rope_theta_names_the_key() {
     let (mut enc, agent) = fixture_json();
-    enc.as_object_mut().unwrap().remove("local_rope_theta");
+    let obj = enc.as_object_mut().unwrap();
+    obj.remove("local_rope_theta");
+    obj.insert(
+        "rope_parameters".into(),
+        json!({"full_attention": {"rope_theta": 160_000.0}}),
+    );
     assert_eq!(config_error_field(parse(&enc, &agent)), "local_rope_theta");
 }
 
