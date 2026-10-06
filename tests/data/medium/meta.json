@@ -89,7 +89,7 @@
   "fastpath_tolerance": 1e-06,
   "fixture_checkpoint_seed": 1234,
   "fixture_hidden": 64,
-  "git_dirty": true,
+  "git_dirty": false,
   "head_heads": 1,
   "input": {
     "head_max_len": 96,

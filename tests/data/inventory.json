@@ -373,7 +373,7 @@
       "vocab_size": 231
     },
     "fixture_hidden": 64,
-    "git_dirty": true,
+    "git_dirty": false,
     "kind": "weights-inventory",
     "laya_diff_empty": true,
     "laya_sparse_commit": "357ad53e393286b565f6c77fb025df6920568528",
