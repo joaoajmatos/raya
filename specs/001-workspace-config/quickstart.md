@@ -12,7 +12,7 @@ cargo test --workspace
 Expected: all four succeed.
 
 **Config parsing** (spec User Story 2): `cargo test -p raya-core` runs the fixture-config tests against
-`tests/data/fixture-tiny/`. The fixture is a real `ModernBertConfig` (3 layers, hidden 64, global layers 0 and 2,
+`tests/data/fixture-tiny/` (since replaced by the vendored `tests/data/fixture-h64/`). The fixture is a real `ModernBertConfig` (3 layers, hidden 64, global layers 0 and 2,
 window 16) plus a Laya agent config.
 
 **CLI stubs** (User Story 1, scenario 4):

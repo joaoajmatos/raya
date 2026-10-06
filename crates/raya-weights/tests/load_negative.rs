@@ -146,16 +146,29 @@ fn duplicate_key_is_reported() {
     ));
 }
 
-/// `fixture-tiny/` has `vocab_size` 100; `weights-h64` was saved with 231. The loader must
-/// reject the pair, naming the embedding table, rather than load a mismatched model.
+/// The vendored `fixture-h64/` config now matches the h64 weights, and `fixture-h128/` the h128
+/// ones; each pair must load.
 #[test]
-fn fixture_tiny_config_does_not_match_h64_weights() {
-    let dir = common::data().join("fixture-tiny");
-    let config = ModelConfig::from_dir(&dir).unwrap();
-    assert_eq!(config.encoder.vocab_size, 100);
+fn fixture_dir_configs_match_their_weights() {
+    for (dir, weights) in [
+        ("fixture-h64", common::h64_path()),
+        ("fixture-h128", common::h128_path()),
+    ] {
+        let config = ModelConfig::from_dir(&common::data().join(dir)).unwrap();
+        assert!(load(&weights, &config).is_ok(), "{dir}");
+    }
+}
+
+/// The h128 config against h64 weights must be rejected, naming the mismatched shapes.
+#[test]
+fn h128_config_does_not_match_h64_weights() {
+    let config = ModelConfig::from_dir(&common::data().join("fixture-h128")).unwrap();
     let r = report(load(&common::h64_path(), &config).err().unwrap());
-    assert_eq!(r.shape.len(), 1, "{r}");
-    assert_eq!(r.shape[0].name, "encoder.embeddings.tok_embeddings.weight");
-    assert_eq!(r.shape[0].expected, [100, 64]);
-    assert_eq!(r.shape[0].found, [231, 64]);
+    let emb = r
+        .shape
+        .iter()
+        .find(|s| s.name == "encoder.embeddings.tok_embeddings.weight")
+        .unwrap_or_else(|| panic!("{r}"));
+    assert_eq!(emb.expected, [231, 128]);
+    assert_eq!(emb.found, [231, 64]);
 }

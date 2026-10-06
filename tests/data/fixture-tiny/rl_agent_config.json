@@ -1,9 +1,0 @@
-{
-  "encoder": "tiny-modernbert-fixture",
-  "head_layers": 1,
-  "max_len": 256,
-  "head_max_len": 96,
-  "temperature": [1.0, 1.0, 1.0],
-  "act_costs": {"abstain": 0.1},
-  "laya_sparse_fixture": true
-}

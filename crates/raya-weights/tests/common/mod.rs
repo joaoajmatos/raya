@@ -22,7 +22,7 @@ pub fn h128_path() -> PathBuf {
 }
 
 /// Built from `inventory.json` `meta`, which records the config the h64 weights were saved
-/// with (`fixture-tiny/` has a different `vocab_size`).
+/// with (`fixture-h64/` now carries the same config).
 pub fn h64_config() -> ModelConfig {
     let meta = &inventory()["meta"];
     ModelConfig::from_json(
