@@ -6,10 +6,9 @@ compile_error!("raya-weights assumes little-endian");
 
 mod buffer;
 mod convert;
-mod key;
 mod mapping;
 mod store;
 
-pub use key::{HeadPart, ParamKey};
 pub use mapping::{expected, Entry};
+pub use raya_core::{HeadPart, ParamKey};
 pub use store::{load, load_dir, Tensor, WeightStore};

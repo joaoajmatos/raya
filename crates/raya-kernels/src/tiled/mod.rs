@@ -5,7 +5,9 @@ pub use stages::StageTimes;
 
 use std::sync::Mutex;
 
-use crate::attention::{validate, AttentionKernel, AttnParams, AttnShape, KernelError, BLOCK};
+use crate::attention::{
+    validate, AttentionKernel, AttnParams, AttnShape, KernelError, Mask, BLOCK,
+};
 use crate::simd::Backend;
 use crate::threads::default_threads;
 
@@ -66,6 +68,12 @@ impl Tiled {
         out: &mut [f32],
     ) -> Result<StageTimes, KernelError> {
         validate(shape, &params, q, k, v, out)?;
+        if !matches!(params.mask, Mask::Block3 | Mask::Window64) {
+            return Err(KernelError::Unsupported(format!(
+                "mask `{}` (the tiled kernel handles block3 and window64 only)",
+                params.mask.name()
+            )));
+        }
         let d = shape.head_dim;
         let head_len = shape.seq * d;
         if head_len == 0 {

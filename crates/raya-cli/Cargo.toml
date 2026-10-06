@@ -11,11 +11,13 @@ publish.workspace = true
 anyhow.workspace = true
 clap.workspace = true
 raya-core.workspace = true
+raya-kernels.workspace = true
+raya-tokenizer.workspace = true
 raya-weights.workspace = true
+serde_json.workspace = true
 
 [dev-dependencies]
 safetensors.workspace = true
-serde_json.workspace = true
 tempfile.workspace = true
 
 [lints]

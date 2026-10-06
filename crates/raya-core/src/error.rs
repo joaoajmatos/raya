@@ -17,6 +17,12 @@ pub enum Error {
     },
     #[error("not implemented: {0}")]
     Unimplemented(String),
+    /// A forward-pass input outside what the model accepts.
+    #[error("invalid input: {0}")]
+    Input(String),
+    /// The attention kernel rejected or failed a call.
+    #[error("attention kernel: {0}")]
+    Kernel(String),
     #[error("{0}")]
     Weights(Box<LoadReport>),
 }

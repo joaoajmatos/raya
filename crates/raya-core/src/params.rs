@@ -33,3 +33,10 @@ pub enum ParamKey {
     ActHead { idx: usize, bias: bool },
     Temperature,
 }
+
+/// Read access to a model's fp32 parameters, implemented by `raya-weights::WeightStore`
+/// (`raya-weights` depends on this crate, so the store cannot be named here).
+pub trait ParamSource {
+    /// Data (row-major) and shape of one parameter, `None` if absent.
+    fn param(&self, key: ParamKey) -> Option<(&[f32], &[usize])>;
+}

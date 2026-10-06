@@ -4,7 +4,7 @@
 
 **Created**: 2026-09-30
 
-**Status**: Clarified
+**Status**: Implemented
 
 **Origin**: Prompt P5 of the former `docs/agent-prompts.md`.
 

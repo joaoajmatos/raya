@@ -7,8 +7,10 @@ Work is specified in [specs/](specs/README.md) (Spec Kit; rules in
 
 **Status:** the workspace, CI and configuration types exist ([specs/001](specs/001-workspace-config/spec.md)).
 The block-local attention kernel spike ([specs/007](specs/007-block-local-kernel/spec.md)) is implemented in
-`raya-kernels`; results and conclusion are in [docs/kernel-notes.md](docs/kernel-notes.md). There is no model
-math yet; the `raya` subcommands are stubs.
+`raya-kernels`; results and conclusion are in [docs/kernel-notes.md](docs/kernel-notes.md). The reference
+forward pass ([specs/006](specs/006-reference-forward/spec.md), [docs/tensor-runtime.md](docs/tensor-runtime.md))
+matches Laya's golden fixtures layer by layer and backs `raya predict`; it is unoptimized and no performance
+claim is made. `raya bench` is still a stub.
 
 ## Scope limits
 

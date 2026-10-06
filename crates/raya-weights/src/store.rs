@@ -2,12 +2,11 @@ use std::collections::{BTreeSet, HashMap};
 use std::ops::Range;
 use std::path::Path;
 
-use raya_core::{Error, LoadReport, ModelConfig, Result, ShapeMismatch};
+use raya_core::{Error, LoadReport, ModelConfig, ParamKey, ParamSource, Result, ShapeMismatch};
 use safetensors::{Dtype, SafeTensors};
 
 use crate::buffer::{read_file, AlignedBuf};
 use crate::convert::{bf16_to_f32, f16_to_f32};
-use crate::key::ParamKey;
 use crate::mapping::expected;
 
 /// A borrowed view of one parameter inside the store's buffer.
@@ -50,6 +49,12 @@ impl WeightStore {
 
     pub fn total_bytes(&self) -> usize {
         self.index.values().map(|(range, _)| range.len()).sum()
+    }
+}
+
+impl ParamSource for WeightStore {
+    fn param(&self, key: ParamKey) -> Option<(&[f32], &[usize])> {
+        self.get(key).map(|t| (t.data, t.shape))
     }
 }
 
