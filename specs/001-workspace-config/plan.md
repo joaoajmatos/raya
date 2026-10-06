@@ -18,7 +18,7 @@ Laya's own shape is supported. No model math; CLI subcommands are stubs.
 
 **Primary Dependencies**: serde, serde_json, thiserror (raya-core); safetensors (raya-weights); tokenizers (raya-tokenizer); clap, anyhow (raya-cli). No others (spec FR-007); criterion is deferred to feature 007 where benches first exist.
 
-**Storage**: JSON config files on disk; checked-in fixture under `tests/data/fixture-tiny/`
+**Storage**: JSON config files on disk; checked-in fixture under `tests/data/fixture-tiny/` (now `fixture-h64/` and `fixture-h128/`, vendored from laya-sparse)
 
 **Testing**: `cargo test` (unit tests in `raya-core`, process-level tests for the CLI stubs, a source-level check of the `forbid(unsafe_code)` rule)
 
@@ -83,7 +83,7 @@ crates/
 └── raya-cli/
     ├── src/main.rs
     └── tests/stubs.rs
-tests/data/fixture-tiny/
+tests/data/fixture-tiny/   # now fixture-h64/ and fixture-h128/ (laya-sparse 357ad53)
 ├── encoder/config.json         # real ModernBertConfig.save_pretrained output
 └── rl_agent_config.json
 ```

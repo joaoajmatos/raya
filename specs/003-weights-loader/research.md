@@ -60,7 +60,7 @@ Hypothesis check against the h64 inventory (d=64, i=128, V=231, L=3, H=1, n_act=
 - **Rationale**: 001 left the enum open for later features; one variant keeps downstream `match` sites small.
 
 ## R7. `raya info`
-- Takes a checkpoint directory, uses `load_dir`, prints plain `key: value` lines (see contracts/info-cli.md). Failures go to stderr with exit 1. The temp checkpoint directory in the test is assembled by copying `fixture-tiny/` configs and `weights-h64.safetensors` as `model.safetensors`; no vendored file is touched.
+- Takes a checkpoint directory, uses `load_dir`, prints plain `key: value` lines (see contracts/info-cli.md). Failures go to stderr with exit 1. The temp checkpoint directory in the test is assembled by copying the `fixture-h64/` configs (then `fixture-tiny/`) and `weights-h64.safetensors` as `model.safetensors`; no vendored file is touched.
 
 ## R8. Dev dependencies
 - `tempfile` for temp dirs. Mutated safetensors files are produced with the `safetensors` crate's serializer (already a dependency).

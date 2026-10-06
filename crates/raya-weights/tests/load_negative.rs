@@ -164,9 +164,11 @@ fn fixture_dir_configs_match_their_weights() {
 fn h128_config_does_not_match_h64_weights() {
     let config = ModelConfig::from_dir(&common::data().join("fixture-h128")).unwrap();
     let r = report(load(&common::h64_path(), &config).err().unwrap());
-    assert!(!r.shape.is_empty(), "{r}");
-    assert!(r
+    let emb = r
         .shape
         .iter()
-        .any(|s| s.name == "encoder.embeddings.tok_embeddings.weight"));
+        .find(|s| s.name == "encoder.embeddings.tok_embeddings.weight")
+        .unwrap_or_else(|| panic!("{r}"));
+    assert_eq!(emb.expected, [231, 128]);
+    assert_eq!(emb.found, [231, 64]);
 }

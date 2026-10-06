@@ -19,7 +19,7 @@
 ## Phase 2: Foundational
 
 - [X] T003 `crates/raya-core/src/error.rs`: `Error` enum (`Config`, `Io`, `Json`, `Unimplemented`) and `Result` alias
-- [X] T004 Generate fixture `tests/data/fixture-tiny/encoder/config.json` from a real `ModernBertConfig` and `tests/data/fixture-tiny/rl_agent_config.json` (done during planning; verify they are committed)
+- [X] T004 Generate fixture `tests/data/fixture-tiny/encoder/config.json` from a real `ModernBertConfig` and `tests/data/fixture-tiny/rl_agent_config.json` (done during planning; verify they are committed; later replaced by `fixture-h64/` and `fixture-h128/` vendored from laya-sparse 357ad53)
 
 **Checkpoint**: `cargo build --workspace` succeeds with empty crates.
 

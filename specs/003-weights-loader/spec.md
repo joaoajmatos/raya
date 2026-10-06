@@ -15,7 +15,7 @@
 ## Context: what exists on `main`
 
 - `raya-core` provides `ModelConfig` (`from_dir`, `from_json`), `ModelShape`, `HeadConfig` and `Error { Config, Io, Json, Unimplemented }`. `raya-weights` is an empty crate that re-exports `safetensors::SafeTensors`. `raya info` is a stub that exits 2.
-- A Laya checkpoint directory holds `model.safetensors`, `rl_agent_config.json` and `encoder/config.json` (`laya/agent.py` in the reference submodule). The vendored fixtures are flat instead: weights in `tests/data/weights-h64.safetensors` (config in `tests/data/fixture-tiny/`) and `weights-h128.safetensors` (config embedded in `tests/data/fastpath_off/meta.json`).
+- A Laya checkpoint directory holds `model.safetensors`, `rl_agent_config.json` and `encoder/config.json` (`laya/agent.py` in the reference submodule). The vendored fixtures are flat instead: weights in `tests/data/weights-h64.safetensors` (config in `tests/data/fixture-h64/`) and `weights-h128.safetensors` (config in `tests/data/fixture-h128/`, also embedded in `tests/data/fastpath_off/meta.json`).
 - `tests/data/inventory.json` (h64 fixture, 3 encoder layers, 1 decision-head layer) lists 44 keys, all `float32`, 210822 parameters. Its groups: `encoder.embeddings.{tok_embeddings,norm}`, `encoder.layers.N.{attn.Wqkv,attn.Wo,mlp.Wi,mlp.Wo,mlp_norm}`, `encoder.layers.N.attn_norm` for N >= 1 only (layer 0 has none), `encoder.final_norm`, `head.layers.N.*` (self-attention in/out projections, two linears, two norms with weight and bias), `type_emb`, `scorer.{0,1,3}`, `act_head.{0,2}`, `temperature`. There is no decoder or classifier tensor (embeddings are tied and unused).
 - Tensor widths scale with `hidden_size` (64 and 128 in the fixtures), so shapes must be derived from the config, not copied from the inventory.
 
@@ -60,7 +60,7 @@ A Laya `model.safetensors` plus its config loads into a `WeightStore`. Every ten
 
 **Why this priority**: No forward pass is possible without weights.
 
-**Independent Test**: Load `weights-h64.safetensors` with the `fixture-tiny` config and `weights-h128.safetensors` with its h128 config; compare every tensor bit for bit with the file.
+**Independent Test**: Load `weights-h64.safetensors` with the `fixture-h64` config and `weights-h128.safetensors` with the `fixture-h128` config; compare every tensor bit for bit with the file.
 
 **Acceptance Scenarios**:
 
