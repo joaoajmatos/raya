@@ -1,4 +1,4 @@
-//! Forward-pass edge cases (spec 006 hardening): non-prefix marker masks, the shortest sequence,
+//! Forward-pass edge cases (spec 006 hardening): non-contiguous marker masks, the shortest sequence,
 //! `qtype` 2, and the score features for k >= 3. Tests only; they pin current behavior.
 #![allow(
     clippy::float_cmp,

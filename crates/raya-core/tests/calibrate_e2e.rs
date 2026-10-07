@@ -1,4 +1,4 @@
-//! `calibrate` end to end: clamping, fallback, missing temperatures and non-prefix masks, which
+//! `calibrate` end to end: clamping, fallback, missing temperatures and non-contiguous marker masks, which
 //! `calibrate.rs` only checks through `clamp_temperature` in isolation.
 #![allow(
     clippy::float_cmp,
@@ -109,7 +109,7 @@ fn zero_options_land_in_the_smallest_bucket() {
 }
 
 #[test]
-fn non_prefix_masks_pick_the_valid_logits_in_order() {
+fn non_contiguous_marker_masks_pick_the_valid_logits_in_order() {
     let a = agent("[1.0, 1.0, 1.0]", r#"{"choice:3-5": 4.0}"#);
     let want = calibrate(&[2.0, 0.0], &[true; 2], 0, &a).unwrap(); // k = 2: T = 1
     for (logits, mask) in [
