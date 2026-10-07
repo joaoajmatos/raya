@@ -723,6 +723,8 @@ dependencies = [
  "anyhow",
  "clap",
  "raya-core",
+ "raya-kernels",
+ "raya-tokenizer",
  "raya-weights",
  "safetensors",
  "serde_json",
@@ -733,6 +735,7 @@ dependencies = [
 name = "raya-core"
 version = "0.0.0"
 dependencies = [
+ "raya-kernels",
  "serde",
  "serde_json",
  "thiserror",

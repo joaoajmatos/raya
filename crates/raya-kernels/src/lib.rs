@@ -10,6 +10,7 @@ pub mod threads;
 pub mod tiled;
 
 pub use attention::{AttentionKernel, AttnParams, AttnShape, KernelError, Mask, BLOCK, WINDOW};
+pub use gemm::{GemmBackend, Reference};
 pub use naive::Naive;
 pub use simd::Backend;
 pub use tiled::{StageTimes, Tiled, TiledConfig};

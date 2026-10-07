@@ -54,6 +54,8 @@ pub fn dense_reference(
                     && match params.mask {
                         Mask::Block3 => (i / 128).abs_diff(j / 128) <= 1,
                         Mask::Window64 => i.abs_diff(j) <= 64,
+                        Mask::Full => true,
+                        Mask::Sliding(w) => i.abs_diff(j) <= w,
                     }
             };
             let mut scores = vec![f32::NEG_INFINITY; s];

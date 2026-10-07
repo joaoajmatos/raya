@@ -1,6 +1,4 @@
-use raya_core::{Error, ModelConfig, ModelShape, Result};
-
-use crate::key::{HeadPart, ParamKey};
+use raya_core::{Error, HeadPart, ModelConfig, ModelShape, ParamKey, Result};
 
 /// One expected parameter: typed key, Laya's name for it, and its shape.
 #[derive(Debug, Clone, PartialEq, Eq)]

@@ -26,6 +26,12 @@ pub enum Mask {
     Block3,
     /// Exact sliding window `|i - j| <= WINDOW`.
     Window64,
+    /// Every key below `valid_len` (Laya's global layers and the decision head). Only the
+    /// reference kernel implements it.
+    Full,
+    /// Exact sliding window `|i - j| <= half_window` (Laya's local layers: `local_attention / 2`).
+    /// Only the reference kernel implements it.
+    Sliding(usize),
 }
 
 impl Mask {
@@ -33,6 +39,8 @@ impl Mask {
         match self {
             Mask::Block3 => "block3",
             Mask::Window64 => "window64",
+            Mask::Full => "full",
+            Mask::Sliding(_) => "sliding",
         }
     }
 
@@ -44,6 +52,8 @@ impl Mask {
                 (b.saturating_sub(1) * BLOCK, (b + 2) * BLOCK)
             }
             Mask::Window64 => (i.saturating_sub(WINDOW), i + WINDOW + 1),
+            Mask::Full => (0, valid_len),
+            Mask::Sliding(w) => (i.saturating_sub(w), i.saturating_add(w).saturating_add(1)),
         };
         lo.min(valid_len)..hi.min(valid_len)
     }
@@ -53,6 +63,8 @@ impl Mask {
         match self {
             Mask::Block3 => (i / BLOCK).abs_diff(j / BLOCK) <= 1,
             Mask::Window64 => i.abs_diff(j) <= WINDOW,
+            Mask::Full => true,
+            Mask::Sliding(w) => i.abs_diff(j) <= w,
         }
     }
 }

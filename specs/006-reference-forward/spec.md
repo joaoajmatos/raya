@@ -1,16 +1,28 @@
 # Feature Specification: Reference Forward Pass (Correctness Only)
 
-**Feature Branch**: `p5-forward` (specification directory only; no speckit branch created)
+**Feature Branch**: `006-reference-forward`
 
 **Created**: 2026-09-30
 
-**Status**: Draft
+**Status**: Implemented
 
 **Origin**: Prompt P5 of the former `docs/agent-prompts.md`.
 
 **Depends on**: 002, 003, 005. **Blocks**: 008.
 
 **Input**: User description: "A correct, unoptimized Raya-L forward pass in raya-core, verified layer by layer against Laya's golden fixtures, with a tensor-runtime recommendation, a trace facility, an AttentionKernel trait, and a working `raya predict`."
+
+## Clarifications
+
+### Session 2026-10-07
+
+Answered from this spec, the constitution and the pinned Laya reference (`357ad53`); none needed the researcher.
+
+- Q: What does `raya predict --question` take, given that a Laya question has a type, instructions and options? -> A: A Laya question definition as JSON (`{"type": "choice", "instructions": ..., "criteria": ...}`), passed inline or as a path to a JSON file; `--document` is a text file used as the state string. The model directory holds `model.safetensors`, `rl_agent_config.json`, `encoder/config.json` and `tokenizer.json`; `--tokenizer` overrides the tokenizer path (the vendored `fixture-h*` directories carry no tokenizer).
+- Q: Where does temperature calibration happen, in the forward or after it? -> A: After. Laya's `DecisionModel.forward` returns raw marker logits and `act_logits`; calibration is `Agent._decode_answers`: `z = logits[:k] / T`, with `T = temperature_by_options[temp_bucket(qtype, k)]` falling back to `temperature[qtype]`, each clamped to [0.5, 5.0] (non-finite becomes 1.0), then a max-shifted softmax. Raya ports that as a separate calibration step. The golden `probabilities` tensor is `softmax(logits)` without temperature (the fixture's temperatures are all 1.0), and `act_probability` is `softmax(act_logits)[0]`.
+- Q: How does the existing `AttentionKernel` (spec 007, merged) express the encoder's global and local layers and the head's key-padding mask? -> A: Adopt the 007 trait and extend `Mask` additively with `Full` and `Sliding(half_window)` (`|i - j| <= half_window`, where `half_window = local_attention / 2`, 8 for the fixture and 64 for the real checkpoint). A dense reference kernel implements them. The tiled kernel returns `KernelError::Unsupported` for the new variants. Padding is the trait's `valid_len` prefix, and the forward input carries only `valid_len`, so only right padding exists.
+- Q: Which positions are compared in the padded case, and may the tolerances change? -> A: Rows `0..valid_len` only (the 007 trait zeroes padded query rows, whereas Laya computes them; they never influence valid rows). Tolerances start at 1e-4 absolute for layer outputs and 1e-5 for probabilities and are tightened to the measured error only with the measurement recorded; any gap is reported, not hidden.
+- Q: Which tensor runtime does 006 use? -> A: Plain Rust loops in `raya-kernels` behind the existing `GemmBackend` trait, no new dependency, no threading. `docs/tensor-runtime.md` compares candle, ndarray plus BLAS and plain loops on build simplicity and on calling our own attention kernel; large-GEMM performance claims are labeled hypotheses because no run exists. Precision (fp32) and target CPU are untouched.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -64,11 +76,11 @@ Attention is invoked through an `AttentionKernel` trait that the dense reference
 
 ### Functional Requirements
 
-- **FR-001**: Implement embeddings, RoPE (separate theta for global and local layers), norms as in Laya, gated MLP, dense attention with the global pattern and the local +/-window mask (mask on dense scores is acceptable here), the configured layer pattern, the 2-layer decision head over the full sequence, marker-token scoring, and temperature-calibrated probabilities.
+- **FR-001**: Implement embeddings (token embedding then bias-free LayerNorm, `norm_eps`), RoPE (separate theta for global and local layers, rotate-half form), norms as in Laya (no attention norm in layer 0, final norm), gated MLP (exact-erf GELU on the first half times the second half), dense attention with the global pattern and the local +/-window mask (mask on dense scores is acceptable here), the configured layer pattern, the 2-layer decision head over the full sequence, marker-token scoring, and temperature-calibrated probabilities (calibration is a separate step after the forward, see Clarifications). The decision head follows `nn.TransformerEncoderLayer(norm_first=True)`: LayerNorm eps 1e-5, ReLU feed-forward, `max(1, hidden / 64)` heads.
 - **FR-002**: Reproduce the whole `DecisionModel.forward` output: `type_emb` addition, the head layers with key-padding mask, marker gathering, `scorer` logits masked to marker validity, and the `act_head` logits from pooled `h[:, 0]` plus top-1, top-1 minus top-2, entropy and option-count features (single-option case included).
 - **FR-003**: Forward trace facility capturing every intermediate activation.
 - **FR-004**: Tensor use sits behind a small internal trait so the runtime can be swapped.
-- **FR-005**: `AttentionKernel` trait shared with feature 007 (if 007 merged first, adopt its definition).
+- **FR-005**: `AttentionKernel` trait shared with feature 007 (merged): adopt its definition and extend `Mask` additively with `Full` and `Sliding(half_window)`; the tiled kernel rejects those variants.
 - **FR-006**: No optimization and no threading beyond the GEMM library default.
 - **FR-007**: fp32 only; the decision head uses standard (non-fast-path) attention semantics, which Laya shows equal to the fast path within 5e-7.
 
@@ -76,6 +88,7 @@ Attention is invoked through an `AttentionKernel` trait that the dense reference
 
 - **SC-001**: All golden cases pass at the stated tolerances.
 - **SC-002**: `raya predict` output matches golden probabilities within 1e-5.
+- **SC-003**: A failing comparison names the case, the tensor and the first divergent layer index.
 
 ## Assumptions
 
