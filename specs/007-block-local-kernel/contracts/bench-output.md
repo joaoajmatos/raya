@@ -7,7 +7,7 @@
 
 ```json
 {
-  "label": "cloud-agent hardware, indicative only",
+  "label": "unlabeled machine, indicative only",
   "metadata": {"cpu_model": "", "logical_cpus": 0, "physical_cpus": 0, "threads": 1,
                "features": ["portable"], "backend": "portable|avx2|neon", "rustflags": "", "rustc": "", "git_commit": "", "timestamp": ""},
   "results": [{"kernel": "naive|tiled", "mask": "block3|window64", "backend": "scalar|portable|avx2|neon", "seq": 2048, "heads": 16, "head_dim": 64, "threads": 1,
@@ -15,6 +15,8 @@
                "stages": {"qk_pct": 0.0, "softmax_pct": 0.0, "pv_pct": 0.0}}]
 }
 ```
+
+The `label` is set from `RAYA_TARGET_MACHINE`: `1` gives "target machine", `cloud-agent` gives "cloud-agent hardware, indicative only", anything else (including unset) gives "unlabeled machine, indicative only" (constitution III, 1.2.0).
 
 - `metadata.backend` is the micro-kernel backend the run used: the detected one, or the one forced with `RAYA_BACKEND` (portable if that one is unavailable); `tiled` result rows repeat it (`naive` rows say `scalar`). `features` lists what is compiled in (`avx2` on every x86_64 build), not what ran.
 - `stages` is present only when built with `--features stage-timing` and is proportional, not absolute.

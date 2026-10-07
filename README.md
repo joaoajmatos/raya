@@ -42,7 +42,9 @@ cargo test --workspace
 ```
 
 Kernel benchmarks: `cargo bench -p raya-kernels --bench local_attention` (see `docs/kernel-notes.md` for options
-and how to read the results; off-target numbers are indicative only).
+and how to read the results; off-target numbers are indicative only). The result JSON `label` follows
+`RAYA_TARGET_MACHINE`: `1` marks the i7-8700 ("target machine"), `cloud-agent` marks cloud hardware, and
+unset gives "unlabeled machine, indicative only".
 
 CI runs formatting, clippy, tests on Linux x86_64 and macOS arm64, and `cargo audit`. Windows builds are
 supported but not part of CI.
