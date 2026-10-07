@@ -22,10 +22,20 @@ and no real checkpoint unless explicitly marked slow.
 ### III. Measure, Do Not Assume
 
 Performance claims MUST come from a reproducible run that records CPU model, core count, feature flags,
-thread settings, rustc version, git commit and checkpoint revision. Numbers produced on any machine other
-than the project's target CPU (the i7-8700 of the feasibility study) MUST be labeled "cloud-agent hardware,
-indicative only" and MUST NOT be compared with `docs/feasibility.md` or Laya result directories.
-Unmeasured statements are hypotheses and MUST be labeled as such. Negative and inconclusive results are
+thread settings, rustc version, git commit and checkpoint revision. A run's machine label MUST NOT assert
+more than the run knows:
+
+- `RAYA_TARGET_MACHINE=1`: labeled "target machine" (the i7-8700 of the feasibility study). Only the person
+  running on that machine sets it.
+- `RAYA_TARGET_MACHINE=cloud-agent`: labeled "cloud-agent hardware, indicative only". Set explicitly, by the
+  cloud agent's environment or by the person who knows the run was on cloud hardware.
+- `RAYA_TARGET_MACHINE` unset or any other value: labeled "unlabeled machine, indicative only". The run
+  makes no hardware claim.
+
+Numbers that do not carry the "target machine" label, whether "cloud-agent" or "unlabeled", are indicative
+only and MUST NOT be compared with `docs/feasibility.md` or Laya result directories. Report authors who know
+the machine of an unlabeled run MAY state it in the report text (with the CPU model string from the metadata
+as evidence) but MUST NOT edit the recorded `label`. Unmeasured statements are hypotheses and MUST be labeled as such. Negative and inconclusive results are
 valid outcomes and MUST be reported.
 
 ### IV. Scope Discipline: Raya-L, fp32, Inference Only
@@ -122,4 +132,13 @@ MINOR for new or materially expanded principles, PATCH for clarifications.
   still an open human decision (`docs/feasibility.md` scope is unchanged, so it is not edited). Affects:
   principle V; spec 007 FR-003 and its clarification on CPU feature baseline; README scope line.
 
-**Version**: 1.1.0 | **Ratified**: 2026-09-30 | **Last Amended**: 2026-10-04
+- **1.2.0 (2026-10-07, MINOR, human-approved)**: principle III. The bench `label` defaulted to
+  "cloud-agent hardware, indicative only" when `RAYA_TARGET_MACHINE` was unset, which mislabeled two runs on an
+  i7-8700-class machine (6C/12T). The default is now "unlabeled machine, indicative only", the target machine is
+  claimed only with `RAYA_TARGET_MACHINE=1`, and the cloud-agent label only with `RAYA_TARGET_MACHINE=cloud-agent`.
+  Approved by the human on 2026-10-07 ("approve as drafted"). Affects: principle III; spec 007 data-model,
+  bench-output contract, tasks T017 and T025, plan, quickstart and spec; `docs/kernel-notes.md` unchanged (its
+  figures are hand-labeled cloud-agent by the author, who knew the machine); `docs/feasibility.md` scope is
+  unchanged, so it is not edited.
+
+**Version**: 1.2.0 | **Ratified**: 2026-09-30 | **Last Amended**: 2026-10-07
