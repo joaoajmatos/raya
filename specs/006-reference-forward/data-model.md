@@ -26,7 +26,7 @@ Unchanged enums from `raya-weights` (typed identity of one Laya parameter). Re-e
 | `marker_mask` | `&[bool]` | same length as `marker_pos` |
 | `qtype` | `usize` | `0..3` |
 
-Built from a tokenizer `Batch` row (`attention_mask` must be a prefix of ones, else `Error::Unimplemented`).
+Built from a tokenizer `Batch` row; padding is only expressible as the `valid_len` prefix (right padding, as Laya's collation produces), so there is no non-prefix case to reject.
 
 ## ForwardOutput
 
@@ -39,7 +39,7 @@ Ordered list of `(name: String, shape: Vec<usize>, data: Vec<f32>)`. Names: `emb
 ## Calibrated
 
 `Calibrated { probabilities: Vec<f32>, temperature: f32, act_probability: f32 }`.
-`calibrate(logits: &[f32] (k valid), qtype, agent: &AgentConfig) -> Result<Vec<f32>>` implements research R7.
+`calibrate(logits: &[f32], marker_mask: &[bool], qtype, agent: &AgentConfig) -> Result<Vec<f32>>` implements research R7: it keeps the valid logits and uses their count as `k`, as `Agent._decode_answers` does.
 
 ## Mask (extended in `raya-kernels`)
 

@@ -53,7 +53,7 @@ fn temperatures_are_clamped_like_laya() {
 #[test]
 fn calibration_scales_logits_and_sums_to_one() {
     let a = agent("[2.0, 1.0, 1.0]", "{}");
-    let p = calibrate(&[2.0, 0.0, -2.0], 0, &a).unwrap();
+    let p = calibrate(&[2.0, 0.0, -2.0], &[true; 3], 0, &a).unwrap();
     assert!((p.iter().sum::<f32>() - 1.0).abs() < 1e-6);
     // T = 2 halves the logits: softmax([1, 0, -1])
     let e = [1.0f32.exp(), 1.0, (-1.0f32).exp()];
@@ -66,8 +66,8 @@ fn calibration_scales_logits_and_sums_to_one() {
 #[test]
 fn bucket_entry_overrides_the_type_temperature() {
     let a = agent("[1.0, 1.0, 1.0]", r#"{"choice:3-5": 4.0}"#);
-    let flat = calibrate(&[2.0, 0.0, -2.0], 0, &a).unwrap(); // k = 3: bucket entry, T = 4
-    let plain = calibrate(&[2.0, 0.0, -2.0], 1, &a).unwrap(); // score: temperature[1] = 1
+    let flat = calibrate(&[2.0, 0.0, -2.0], &[true; 3], 0, &a).unwrap(); // k = 3: bucket entry, T = 4
+    let plain = calibrate(&[2.0, 0.0, -2.0], &[true; 3], 1, &a).unwrap(); // score: temperature[1] = 1
     assert!(flat[0] < plain[0]);
     let _: BTreeMap<String, f32> = a.temperature_by_options.clone();
 }
@@ -75,8 +75,32 @@ fn bucket_entry_overrides_the_type_temperature() {
 #[test]
 fn degenerate_inputs_are_errors() {
     let a = agent("[1.0, 1.0, 1.0]", "{}");
-    assert!(matches!(calibrate(&[], 0, &a), Err(Error::Input(_))));
-    assert!(matches!(calibrate(&[1.0], 3, &a), Err(Error::Input(_))));
+    assert!(matches!(calibrate(&[], &[], 0, &a), Err(Error::Input(_))));
+    assert!(matches!(
+        calibrate(&[1.0], &[true], 3, &a),
+        Err(Error::Input(_))
+    ));
+    assert!(matches!(
+        calibrate(&[1.0], &[false], 0, &a),
+        Err(Error::Input(_))
+    ));
+    assert!(matches!(
+        calibrate(&[1.0, 2.0], &[true], 0, &a),
+        Err(Error::Input(_))
+    ));
     // a single option stays at probability 1
-    assert_eq!(calibrate(&[0.3], 2, &a).unwrap(), [1.0]);
+    assert_eq!(calibrate(&[0.3], &[true], 2, &a).unwrap(), [1.0]);
+}
+
+/// `k` is the number of valid markers, as in `Agent._decode_answers`: a forward output with
+/// invalid (`-1e4`) slots must use the bucket of the valid count, not of the slot count.
+#[test]
+fn invalid_markers_are_dropped_and_not_counted_in_k() {
+    // choice:3-5 (k = 3) runs hot at 4.0, choice:6-10 (k = 6 slots) would be 1.0
+    let a = agent("[1.0, 1.0, 1.0]", r#"{"choice:3-5": 4.0}"#);
+    let logits = [2.0, 0.0, -2.0, -1e4, -1e4, -1e4];
+    let mask = [true, true, true, false, false, false];
+    let p = calibrate(&logits, &mask, 0, &a).unwrap();
+    assert_eq!(p.len(), 3);
+    assert_eq!(p, calibrate(&logits[..3], &[true; 3], 0, &a).unwrap());
 }

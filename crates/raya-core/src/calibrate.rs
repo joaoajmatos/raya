@@ -32,11 +32,31 @@ pub fn temp_bucket(qtype: usize, k: usize) -> Result<String> {
     Ok(format!("{name}:{size}"))
 }
 
-/// Calibrated option probabilities for the `k = logits.len()` valid markers of one question:
-/// `softmax(logits / T)` with `T = temperature_by_options[bucket]`, else `temperature[qtype]`.
-pub fn calibrate(logits: &[f32], qtype: usize, agent: &AgentConfig) -> Result<Vec<f32>> {
+/// Calibrated option probabilities for one question: `softmax(logits[valid] / T)` over the `k`
+/// markers `marker_mask` marks valid (Laya's `logits[:k]`, `k` = number of valid markers), with
+/// `T = temperature_by_options[bucket(qtype, k)]`, else `temperature[qtype]`. Pass
+/// `ForwardOutput::logits` and the mask the forward was given; invalid markers (`-1e4`) are
+/// dropped and never counted in `k`.
+pub fn calibrate(
+    logits: &[f32],
+    marker_mask: &[bool],
+    qtype: usize,
+    agent: &AgentConfig,
+) -> Result<Vec<f32>> {
+    if logits.len() != marker_mask.len() {
+        return Err(Error::Input(format!(
+            "{} logits but {} mask entries",
+            logits.len(),
+            marker_mask.len()
+        )));
+    }
+    let logits: Vec<f32> = logits
+        .iter()
+        .zip(marker_mask)
+        .filter_map(|(&l, &valid)| valid.then_some(l))
+        .collect();
     if logits.is_empty() {
-        return Err(Error::Input("no option logits to calibrate".into()));
+        return Err(Error::Input("no valid option logits to calibrate".into()));
     }
     let bucket = temp_bucket(qtype, logits.len())?;
     let t = match agent.temperature_by_options.get(&bucket) {

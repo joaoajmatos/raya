@@ -74,7 +74,7 @@ pub fn run(args: &Args) -> Result<String> {
         &Naive,
         None,
     )?;
-    let probabilities = calibrate(&out.logits, qtype, &config.agent)?;
+    let probabilities = calibrate(&out.logits, &marker_mask, qtype, &config.agent)?;
     let mut act = out.act_logits.clone();
     softmax_in_place(&mut act);
 

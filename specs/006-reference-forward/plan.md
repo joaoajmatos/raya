@@ -38,7 +38,7 @@ A plain, unoptimized fp32 port of `DecisionModel.forward` (ModernBERT encoder, `
 | IV Raya-L, fp32 | Pass. fp32 throughout; a non-`LayaInterleaved` shape or unsupported config returns `Error::Unimplemented`. |
 | V Portable first | Pass. Plain loops; no `target-cpu` flags; `unsafe` stays confined to `raya-kernels` (the changes there are safe code). |
 | VI Correctness before speed | Pass. This is the oracle later kernels and the benchmark harness compare against; attention is behind the single kernel trait. |
-| VII Small surface, explicit errors | Pass. No new dependency. Unsupported inputs (non-prefix attention mask, ids outside the vocabulary, marker out of range, unsupported activation or layer type) are explicit errors. |
+| VII Small surface, explicit errors | Pass. No new dependency. Unsupported inputs (ids outside the vocabulary, marker out of range, unsupported activation or layer type) are explicit errors. |
 
 Re-check after design: unchanged. One cross-crate refactor (moving `ParamKey` and `HeadPart` into `raya-core`, re-exported from `raya-weights`) avoids a dependency cycle and changes no public path.
 
@@ -89,6 +89,6 @@ docs/tensor-runtime.md
 5. **Attention kernel**: `Mask::Full` and `Mask::Sliding(w)` are added to the 007 enum; `Naive` serves them (it visits only allowed keys, which equals the dense masked softmax). `Tiled` returns `Unsupported` for them. A stub-kernel test swaps in a second implementation without touching model code (US3).
 6. **GEMM**: `GemmBackend::matmul_nt(out, a, b, m, n, k)` computes `a [m,k] x b[n,k]^T`; `Reference` is plain loops with sequential f32 accumulation, single-threaded.
 7. **GELU**: exact (`0.5 x (1 + erf(x / sqrt 2))`), because torch's `nn.GELU()` default and `ACT2FN["gelu"]` are exact. Rust std has no `erf`, so `ops.rs` carries its own f64 implementation (Taylor series for small `|x|`, continued fraction for the tail), unit-tested against known values; no new dependency.
-8. **Calibration**: `calibrate(logits[..k], qtype, k, agent_config)` per research R7. `raya predict` prints calibrated probabilities and the act probability as JSON, unrounded.
+8. **Calibration**: `calibrate(logits, marker_mask, qtype, agent_config)` (`k` = valid markers) per research R7. `raya predict` prints calibrated probabilities and the act probability as JSON, unrounded.
 9. **Trace**: `Trace` stores tensors in execution order under the golden names (`embedding_output`, `encoder_layer_NN`, `encoder_final_norm`, `type_emb_add`, `head_input`, `head_layer_NN`, `marker_states`, `logits`, `probabilities`, `act_features`, `pooled`, `act_logits`; `encoder_output` is the same tensor as `encoder_final_norm`). Opt-in via `Option<&mut Trace>`.
 10. **Golden comparison**: per tensor, the max absolute difference over valid rows; the test prints a table and asserts `<= 1e-4` for intermediates and logits and `<= 1e-5` for `probabilities` (research R9). A failure names case, tensor and, for layer tensors, the first divergent layer index.

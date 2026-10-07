@@ -16,7 +16,7 @@ Laya's encoder is Hugging Face `ModernBertModel`; its source is not in the submo
 
 ## R4. Padding
 
-Encoder: the HF attention mask removes padded keys; padded query rows still compute and produce non-zero values in Laya. Head: `src_key_padding_mask`. The 007 trait zeroes padded query rows and only supports a prefix of valid keys. Valid rows are identical either way because padded keys are masked everywhere, so goldens are compared on rows `0..valid_len`. The `padded` case is right-padded (`unpadded_length` 82 of 160). A non-prefix mask is rejected with `Error::Unimplemented`; this is a Raya limitation, not a Laya behavior.
+Encoder: the HF attention mask removes padded keys; padded query rows still compute and produce non-zero values in Laya. Head: `src_key_padding_mask`. The 007 trait zeroes padded query rows and only supports a prefix of valid keys. Valid rows are identical either way because padded keys are masked everywhere, so goldens are compared on rows `0..valid_len`. The `padded` case is right-padded (`unpadded_length` 82 of 160). `ForwardInput` carries only `valid_len`, so right padding is the only expressible layout (as Laya's collation produces); there is no non-prefix mask to reject.
 
 ## R5. Decision head layer
 
