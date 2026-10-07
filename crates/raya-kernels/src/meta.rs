@@ -3,6 +3,10 @@ use serde::Serialize;
 use crate::simd::Backend;
 
 pub const LABEL_CLOUD: &str = "cloud-agent hardware, indicative only";
+/// Written when `RAYA_TARGET_MACHINE` is not `1`: the run makes no claim about which machine it ran on.
+pub const LABEL_UNLABELED: &str =
+    "unlabeled (set RAYA_TARGET_MACHINE=1 to label the target machine), indicative only";
+pub const LABEL_TARGET: &str = "target machine";
 
 /// Machine and build description stored next to benchmark results (constitution III).
 #[derive(Debug, Clone, Serialize)]
@@ -63,18 +67,25 @@ fn enabled_features() -> Vec<String> {
 }
 
 impl BenchMetadata {
-    /// Metadata for a run with the given worker count. The label is the cloud label unless
-    /// `RAYA_TARGET_MACHINE=1`.
+    /// Metadata for a run with the given worker count. The label is `target machine` when
+    /// `RAYA_TARGET_MACHINE=1` and the unlabeled text otherwise, never a hardware claim.
     pub fn collect(threads: usize) -> Self {
-        let on_target = std::env::var("RAYA_TARGET_MACHINE").is_ok_and(|v| v == "1");
+        Self::collect_with(
+            threads,
+            std::env::var("RAYA_TARGET_MACHINE").ok().as_deref(),
+        )
+    }
+
+    fn collect_with(threads: usize, target_env: Option<&str>) -> Self {
+        let on_target = target_env == Some("1");
         let secs = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .map_or(0, |d| d.as_secs());
         Self {
             label: if on_target {
-                "target machine"
+                LABEL_TARGET
             } else {
-                LABEL_CLOUD
+                LABEL_UNLABELED
             }
             .to_string(),
             cpu_model: cpu_model(),
@@ -114,5 +125,22 @@ mod tests {
             assert!(json.get(key).is_some(), "missing {key}");
         }
         assert_eq!(json["threads"], 2);
+    }
+
+    #[test]
+    fn label_never_claims_hardware_without_the_env_var() {
+        for env in [None, Some(""), Some("0"), Some("yes")] {
+            let label = BenchMetadata::collect_with(1, env).label;
+            assert_eq!(label, LABEL_UNLABELED, "env {env:?}");
+            assert!(!label.contains("cloud-agent"));
+        }
+    }
+
+    #[test]
+    fn label_is_target_machine_when_env_is_one() {
+        assert_eq!(
+            BenchMetadata::collect_with(1, Some("1")).label,
+            LABEL_TARGET
+        );
     }
 }
