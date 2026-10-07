@@ -15,6 +15,7 @@ feature before starting its dependents. Governing rules: `.specify/memory/consti
 | [006-reference-forward](006-reference-forward/spec.md) | P5 | raya | 002, 003, 005 |
 | [007-block-local-kernel](007-block-local-kernel/spec.md) | P6 | raya | 001 |
 | [008-bench-harness](008-bench-harness/spec.md) | P7 | raya + laya-sparse | 006, 007 |
+| [009-gemm-backend-comparison](009-gemm-backend-comparison/spec.md) | follow-up to `docs/tensor-runtime.md` | raya | 006, 007 (whole-forward step: 008) |
 
 ```
 001 workspace ─┬─> 003 weights ──────┐
