@@ -137,8 +137,9 @@ MINOR for new or materially expanded principles, PATCH for clarifications.
   i7-8700-class machine (6C/12T). The default is now "unlabeled machine, indicative only", the target machine is
   claimed only with `RAYA_TARGET_MACHINE=1`, and the cloud-agent label only with `RAYA_TARGET_MACHINE=cloud-agent`.
   Approved by the human on 2026-10-07 ("approve as drafted"). Affects: principle III; spec 007 data-model,
-  bench-output contract, tasks T017 and T025, plan, quickstart and spec; `docs/kernel-notes.md` unchanged (its
-  figures are hand-labeled cloud-agent by the author, who knew the machine); `docs/feasibility.md` scope is
+  bench-output contract and task T017 (edited); `docs/kernel-notes.md` and README (clarifying note on how the
+  label is set; figures and labels unchanged). Spec 007 plan, quickstart, spec and T025 are not edited: they
+  describe figures the author hand-labeled cloud-agent, knowing the machine. `docs/feasibility.md` scope is
   unchanged, so it is not edited.
 
 **Version**: 1.2.0 | **Ratified**: 2026-09-30 | **Last Amended**: 2026-10-07
