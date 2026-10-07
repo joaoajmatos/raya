@@ -34,7 +34,7 @@ Wrap `matrixmultiply`, `gemm` and `faer` as `GemmBackend` implementations in `ra
 |---|---|
 | I. Laya is the specification | Pass. Shapes come from the Laya checkpoint; no model code changes. |
 | II. Parity via golden fixtures | Pass. Golden gate per candidate; per-shape bound covers the shapes the fixtures cannot. |
-| III. Measure, do not assume | Pass as it stands. Every cost cell in the spec is marked a hypothesis until measured; the label comes from `BenchMetadata`; nothing is compared across machines. The pending amendment of III changes only the label text, not this plan. |
+| III. Measure, do not assume | Pass. Every cost cell in the spec is marked a hypothesis until measured; the label comes from `BenchMetadata` under whichever wording of III is in force (1.2.0 once PR #12 merges); nothing is compared across machines. |
 | IV. Raya-L, fp32, inference only | Pass. fp32 only; int8 and other precisions out of scope. |
 | V. Portable first, runtime-detected SIMD | Pass with check. No `target-cpu`; the portable `Reference` is always present and the default; candidates rely on their own runtime detection (to verify at T004 to T006) and the path that ran is recorded. Threading in a candidate is explicit and recorded. |
 | VI. Reference before kernel | Pass with recorded deviation. `Reference` exists and is the oracle; correctness gates precede timing. The bench is kernel-level, not whole-forward: a deviation recorded in the report, the note and the PR description; T018 closes it through raya:008. |

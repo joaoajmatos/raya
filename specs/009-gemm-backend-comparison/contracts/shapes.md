@@ -15,9 +15,11 @@ Source of the numbers: `docs/feasibility.md` (section 1: "1024->5248, 2624->1024
 | `head_linear1` | head feed-forward in | 4096 (to confirm) | 1024 | 2 | tokens |
 | `head_linear2` | head feed-forward out | 1024 | 4096 (to confirm) | 2 | tokens |
 | `scorer_1` | marker scorer | 1024 | 1024 | 1 | k_markers (2 to 6) |
+| `scorer_3` | marker scorer output | 1 | 1024 | 1 | k_markers (2 to 6) |
 | `act_0` | act head | 256 | 1028 (to confirm) | 1 | 1 |
+| `act_2` | act head output | 2 | 256 | 1 | 1 |
 
-`m` values for the token GEMMs: 512, 1024, 2048, 4096, 8192. Small-`m` GEMMs (`scorer_1`, `act_0`) are measured at their own `m` (1, 2, 3, 6) and are weighted by count in the budget but are expected to be negligible.
+`m` values for the token GEMMs: 512, 1024, 2048, 4096, 8192. Small-`m` GEMMs (`scorer_1`, `scorer_3`, `act_0`, `act_2`) are measured at their own `m` (1, 2, 3, 6) and are weighted by count in the budget but are expected to be negligible.
 
 Tiny and odd shapes for the correctness gate only (not timed): `[m, n, k]` in `{(1,1,1), (3,5,7), (17,9,33), (64,64,64), (130,31,257)}` to cover tails of any blocking.
 

@@ -6,7 +6,7 @@ Git-ignored. Produced by the `gemm_compare` bench (`raya-kernels`, feature `gemm
 {
   "label": "<BenchMetadata.label, never hand-set>",
   "metadata": {
-    "cpu_model": "", "logical_cpus": 0, "physical_cpus": 0, "features": [], "backend": "",
+    "cpu_model": "", "logical_cpus": 0, "physical_cpus": 0, "threads": 0, "features": [], "backend": "",
     "rustflags": "", "rustc": "", "git_commit": "", "timestamp": ""
   },
   "candidates": [
@@ -29,4 +29,4 @@ Rules:
 - A candidate with `gates.per_shape` or `gates.golden` equal to `fail` has no entries in `results`.
 - `ratio_to_reference` is `p50(candidate) / p50(reference-loops, same shape, 1 thread, same session)`; below 1 is faster.
 - `flag` is `drift` when the two passes differ by more than 10%, `few-samples` when the sample count is below the minimum, else null.
-- `threads_effective` is read back from the candidate, not assumed.
+- `threads_effective` is read back from the candidate, not assumed. `metadata.threads` is the `BenchMetadata` field (the run's worker count); per-cell thread counts are in `results`.
