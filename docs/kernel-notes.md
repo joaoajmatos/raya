@@ -6,7 +6,10 @@ Spec: [specs/007-block-local-kernel](../specs/007-block-local-kernel/spec.md).
 **All numbers below are "cloud-agent hardware, indicative only"** (4 vCPU Intel Xeon @ 2.80 GHz, `num_cpus`
 reports 4 physical and 4 logical; rustc 1.94.1; default `RUSTFLAGS`, no `target-cpu`). They are kernel-only
 results, not whole-forward results, a recorded deviation from constitution VI. They are not compared with
-`docs/feasibility.md` or any Laya result directory.
+`docs/feasibility.md` or any Laya result directory. That label is the author's statement for these figures
+(the author knew the machine); the bench itself writes it only when run with `RAYA_TARGET_MACHINE=cloud-agent`
+(constitution 1.2.0). `RAYA_TARGET_MACHINE=1` marks the i7-8700 and an unset variable gives
+"unlabeled machine, indicative only"; the recorded `label` is never edited by hand.
 
 ## What was implemented
 

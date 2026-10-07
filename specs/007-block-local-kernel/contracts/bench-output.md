@@ -7,7 +7,7 @@
 
 ```json
 {
-  "label": "cloud-agent hardware, indicative only",
+  "label": "unlabeled machine, indicative only",  // or "target machine" / "cloud-agent hardware, indicative only", per RAYA_TARGET_MACHINE
   "metadata": {"cpu_model": "", "logical_cpus": 0, "physical_cpus": 0, "threads": 1,
                "features": ["portable"], "backend": "portable|avx2|neon", "rustflags": "", "rustc": "", "git_commit": "", "timestamp": ""},
   "results": [{"kernel": "naive|tiled", "mask": "block3|window64", "backend": "scalar|portable|avx2|neon", "seq": 2048, "heads": 16, "head_dim": 64, "threads": 1,
